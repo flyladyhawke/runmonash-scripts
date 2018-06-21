@@ -3,8 +3,11 @@ import os
 import math
 
 class TimeTrial:
+
+    def __init__(self, cols):
+        self.cols = cols
     
-    def createHtml(self, filename, delimiter, cols):
+    def createHtml(self, filename, delimiter):
         f = open(filename, 'r')
         
         text  = '<p><span style="color:green">Time in green is a PB</span><br/>\n'
@@ -14,9 +17,9 @@ class TimeTrial:
 
         # cell headers
         text += '<tr>\n'
-        for x in range(0, cols):
-            text  += '<th style="width:'+str(math.floor(100/cols * 4/5))+'%;border-bottom:1px solid black;padding-left:5px"> Name</th>\n'
-            text  += '<th style="width:'+str(math.floor(100/cols * 1/5))+'%;border-right:1px solid black;border-bottom:1px solid black"> Time</th>\n'
+        for x in range(0, self.cols):
+            text  += '<th style="width:'+str(math.floor(100/self.cols * 4/5))+'%;border-bottom:1px solid black;padding-left:5px"> Name</th>\n'
+            text  += '<th style="width:'+str(math.floor(100/self.cols * 1/5))+'%;border-right:1px solid black;border-bottom:1px solid black"> Time</th>\n'
         text += '</tr>\n'
 
         lines = []
@@ -24,10 +27,10 @@ class TimeTrial:
             lines.append(line)
 
         num_lines = len(lines)
-        diff = int(math.ceil(num_lines/cols))
+        diff = int(math.ceil(num_lines/self.cols))
         # split into columns
         columns = []
-        for x in range(0, cols):
+        for x in range(0, self.cols):
             start = x * diff
             end = (x+1) * diff
             columns.append(lines[start:end]); 
