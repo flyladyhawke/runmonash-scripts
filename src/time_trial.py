@@ -1,111 +1,96 @@
-from __future__ import division
-import os
 import math
+from jinja2 import Environment, FileSystemLoader
 
-class TimeTrialTemplate:
-
-    legend = '''
-<p><span style="color:green">Time in green is a PB</span><br/>
-<span style="color:blue">Time in blue is a first Time Trial</span></p>
-'''
-
-    table_start = '''
-<table style="color:black;width:90%;border:1px solid black;border-collapse:collapse">
-<tbody>
-'''
-    table_end = '''
-</tbody>
-</table>
-'''
-        
-    table_header_cell_template = '<th style="width:{}%;border-bottom:1px solid black;padding-left:5px">Name</th><th style="width:{}%;border-right:1px solid black;border-bottom:1px solid black">Time</th>'
-    table_tbody_cell_template = '<td style="border-bottom:1px dotted black;padding-left:5px">{}</td><td style="border-right:1px solid black;border-bottom:1px dotted black">{}</td>'
-    
-    score_pb_template = '<span title="Prev PB - {}" style="color:green;">{}*</span>'
-    score_curr_template = '<span title="Curr PB - {}">{}</span>'
-    score_new_template = '<span style="color:blue;">{}</span>'
-    
 
 class TimeTrial:
 
+    template_loader = False
+    template_env = False
+
     def __init__(self, cols):
         self.cols = cols
-        self.template = TimeTrialTemplate()
-    
-    def createHtml(self, filename, delimiter):               
-        text  = self.template.legend
-        text += self.template.table_start
+
+        self.template_loader = FileSystemLoader(searchpath="templates/")
+        self.template_env = Environment(loader=self.template_loader)
+        self.template_env.trim_blocks = True
+        self.template_env.lstrip_blocks = True
+
+    def create_html(self, filename, delimiter):
+        data = []
 
         # cell headers
-        text += '<tr>\n'
         width1 = math.floor((100 * 4/5) // self.cols)
         width2 = math.floor((100 * 1/5) // self.cols)
-        for x in range(0, self.cols):
-            text += self.template.table_header_cell_template.format(width1, width2)
-        text += '</tr>\n'
+        header = {'width_name': width1, 'width_time': width2}
 
         f = open(filename, 'r')
         lines = f.readlines()
 
         num_lines = len(lines)
-        diff = math.ceil(num_lines/self.cols)
+        diff = int(math.ceil(num_lines/self.cols))
         # split into columns
         columns = []
         for x in range(0, self.cols):
             start = x * diff
             end = (x+1) * diff
-            columns.append(lines[start:end]); 
+            columns.append(lines[start:end])
             
-        parseformat = 'new';    
+        parse_format = 'new'
           
-        if (parseformat == 'new'):    
+        if parse_format == 'new':
             for x in range(0, diff):
-                text += '<tr>\n'
+                row = []
                 for y in range(0, len(columns)):
-                    if x < len(columns[y]) :
+                    if x < len(columns[y]):
                         split = columns[y][x].split(delimiter)
-                        name =  split[0].strip()
-                        score = split[len(split)-3]
-                        pb = split[len(split)-2]
-                        score = score.replace('\n','')
-                        desc = split[len(split)-1]
+                        name = split[0].strip()
+                        result = split[1].replace('\n', '')
+                        pb = split[2]
+                        desc = split[3]
                         # print(desc)
                         # handle different ways of showing PB or first TT
                         if "**" in desc:
-                            score = self.template.score_new_template.format(score)
+                            result_type = 'first'
                         elif "*" in desc:
-                            score = self.template.score_pb_template.format(pb, score)
+                            result_type = 'pb'
                         else:
-                            score = self.template.score_curr_template.format(pb, score)
-                           
-                        text += self.template.table_tbody_cell_template.format(name, score)
+                            result_type = 'normal'
+                        row.append({'name': name, 'time': {'result': result, 'result_type': result_type, 'prev': pb}})
                     else:
-                        text += self.template.table_tbody_cell_template.format('', '')
-                text += '</tr>\n'                  
+                        row.append({'name': '', 'time': {'result': '', 'result_type': 'none', 'prev': ''}})
+
+                data.append(row)
         else:
             for x in range(0, diff):
-                text += '<tr>\n'
+                row = []
                 for y in range(0, len(columns)):
-                    if x < len(columns[y]) :
+                    if x < len(columns[y]):
                         split = columns[y][x].split(delimiter)
-                        name =  columns[y][x].rsplit(delimiter, 1)[0].strip()
+                        name = columns[y][x].rsplit(delimiter, 1)[0].strip()
                         score = split[len(split)-1]
-                        score = score.replace('\n','')
+                        score = score.replace('\n', '')
+                        pb = ''
                         # handle different ways of showing PB or first TT
                         if "**" in score:
-                            score = '<span style="color:blue;">'+score.replace("**", "")+'</span>'
+                            result_type = 'first'
+                            result = score.replace("**", "")
                         elif "*" in score:
-                            score = '<span style="color:green;">'+score+'</span>'
+                            result_type = 'pb'
+                            result = score
                         elif " PB" in score:
-                            score = '<span style="color:green;">'+score.replace(" PB", "*")+'</span>'
-                        elif "PB" in score:    
-                            score = '<span style="color:green;">'+score.replace("PB", "*")+'</span>'
+                            result_type = 'pb'
+                            result = score.replace(" PB", "*")
+                        elif "PB" in score:
+                            result_type = 'pb'
+                            result = score.replace("PB", "*")
+                        else:
+                            result_type = 'normal'
+                            result = score
 
-                        text += self.template.table_tbody_cell_template(name, score)
+                        row.append({'name': name, 'time': {'result': result, 'result_type': result_type, 'prev': pb}})
                     else:
-                        text += self.template.table_tbody_cell_template('', '')
-                text += '</tr>\n'
+                        row.append({'name': '', 'time': {'result': '', 'result_type': 'none', 'prev': ''}})
+                data.append(row)
 
-        text += self.template.table_end
-        text += '\n\n\n\n\n'  
-        return text    
+        template = self.template_env.get_template("results.html")
+        return template.render({'cols': self.cols, 'header': header, 'data': data})
