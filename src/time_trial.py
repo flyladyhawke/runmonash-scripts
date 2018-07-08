@@ -1,5 +1,6 @@
-import math
+from math import floor, ceil
 from jinja2 import Environment, FileSystemLoader
+from openpyxl import load_workbook
 
 
 class TimeTrial:
@@ -19,15 +20,15 @@ class TimeTrial:
         data = []
 
         # cell headers
-        width1 = math.floor((100 * 4/5) // self.cols)
-        width2 = math.floor((100 * 1/5) // self.cols)
+        width1 = floor((100 * 4/5) // self.cols)
+        width2 = floor((100 * 1/5) // self.cols)
         header = {'width_name': width1, 'width_time': width2}
 
         f = open(filename, 'r')
         lines = f.readlines()
 
         num_lines = len(lines)
-        diff = int(math.ceil(num_lines/self.cols))
+        diff = int(ceil(num_lines/self.cols))
         # split into columns
         columns = []
         for x in range(0, self.cols):
@@ -94,3 +95,18 @@ class TimeTrial:
 
         template = self.template_env.get_template("results.html")
         return template.render({'cols': self.cols, 'header': header, 'data': data})
+
+
+class TimeTrialAnalysis:
+
+    wb = False
+
+    def __init__(self):
+        self.wb = load_workbook('Run Monash Time Trial.xlsm')
+
+    def print_details(self):
+        print(self.wb.sheetnames)
+
+        sheet = self.wb['Names']
+        print("Max row: " + str(sheet.max_row))
+        print("Max column: " + str(sheet.max_column))
