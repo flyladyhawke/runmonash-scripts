@@ -1,0 +1,28 @@
+<p><span style="color:green">Time in green is a PB</span><br/>
+<span style="color:blue">Time in blue is a first Time Trial</span></p>
+<table style="color:black;width:90%;border:1px solid black;border-collapse:collapse">
+<tbody>
+<tr>
+{% for i in range(0, cols) %}
+    <th style="width:{{header.width_name}}%;border-bottom:1px solid black;padding-left:5px">Name</th>
+    <th style="width:{{header.width_time}}%;border-right:1px solid black;border-bottom:1px solid black">Time</th>
+{% endfor %}
+</tr>
+{% for row in data %}
+<tr>
+    {% for column in row %}
+    <td style="border-bottom:1px dotted black;padding-left:5px">{{column.name}}</td>
+    <td style="border-right:1px solid black;border-bottom:1px dotted black">
+        {% if column.time.result_type == 'pb' %}
+            <span title="Prev PB - {{column.time.prev}}" style="color:green;">{{column.time.result}}*</span>
+        {% elif column.time.result_type == 'first' %}
+            <span style="color:blue;">{{column.time.result}}</span>
+        {% else %}
+            <span title="Curr PB - {{column.time.prev}}">{{column.time.result}}</span>
+        {% endif %}
+    </td>
+    {% endfor %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
