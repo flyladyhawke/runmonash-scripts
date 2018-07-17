@@ -1,9 +1,10 @@
 from math import floor, ceil
 from jinja2 import Environment, FileSystemLoader
 from openpyxl import load_workbook
+#import pandas as pd
 
 
-class TimeTrial:
+class TimeTrialUtils:
 
     template_loader = False
     template_env = False
@@ -110,3 +111,13 @@ class TimeTrialAnalysis:
         sheet = self.wb['Names']
         print("Max row: " + str(sheet.max_row))
         print("Max column: " + str(sheet.max_column))
+
+        data = sheet['A10:AT783']
+        #print(data)
+
+        #df = pd.DataFrame(data)
+        #pd.read_csv('Run Monash Time Trial.xlsm')
+
+        #data = sheet.values
+        #cols = next(data)[1:]
+        #print(cols)
