@@ -13,7 +13,7 @@ def index():
 
 
 @app.route('/time_trial', methods=['GET', 'POST'])
-def add_time_trial():
+def time_trial():
     form = AddTimeTrial()
     current = TimeTrial.query.all()
     if form.validate_on_submit():
@@ -24,12 +24,16 @@ def add_time_trial():
         db.session.add(model)
         db.session.commit()
         flash('Your changes have been saved.')
-        return redirect(url_for('add_time_trial'))
+        return redirect(url_for('time_trial'))
+    elif request.args.get('remove'):
+        runner = Runner.query.filter_by(id=request.args.get('id')).first_or_404()
+        db.session.delete(runner)
+        db.session.commit()
     return render_template('time_trial.html', title='Add', form=form, current=current)
 
 
 @app.route('/runner', methods=['GET', 'POST'])
-def add_runner():
+def runner():
     form = AddRunner()
     current = Runner.query.all()
     if form.validate_on_submit():
@@ -42,7 +46,11 @@ def add_runner():
         db.session.add(model)
         db.session.commit()
         flash('Your changes have been saved.')
-        return redirect(url_for('add_runner'))
+        return redirect(url_for('runner'))
+    elif request.args.get('remove'):
+        tt = Runner.query.filter_by(date=request.args.get('date')).first_or_404()
+        db.session.delete(tt)
+        db.session.commit()
     return render_template('runner.html', title='Add', form=form, current=current)
 
 

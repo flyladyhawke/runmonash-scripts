@@ -13,7 +13,8 @@
     <tr><th>Date</th><th>Description</th><th>Actions</th></tr>
     {% for item in current %}
         <tr><td>{{ item.date }}</td><td>{{ item.description }}</td><td>
-            <a href="{{ url_for('time_trial_result', date=item.date) }}"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
+            <a href="{{ url_for('time_trial_result', date=item.date) }}"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a> |
+            <a href="{{ url_for('time_trial', date=item.date, remove=True) }}"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a>
         </td></tr>
     {% endfor %}
     </table>

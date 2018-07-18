@@ -13,7 +13,8 @@
     <tr><th>Name</th><th>Active</th><th>Actions</th></tr>
     {% for item in current %}
         <tr><td>{{ item.first_name }} {{ item.last_name }}</td><td>{{ item.active }}</td><td>
-            <a href="{{ url_for('runner_result', id=item.id) }}"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
+            <a href="{{ url_for('runner_result', id=item.id) }}"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a> |
+            <a href="{{ url_for('runner', id=item.id, remove=True) }}"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a>
         </td></tr>
     {% endfor %}
     </table>
