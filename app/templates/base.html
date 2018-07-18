@@ -1,22 +1,35 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <head>
-        {% if title %}
-        <title>{{ title }} - Time Trial</title>
-        {% else %}
-        <title>Run Monash - Time Trial!</title>
-        {% endif %}
-    </head>
-</head>
-<body>
-    <div>
-        <a href="/index">Home</a>
-        <a href="/addTimeTrial">Add Time Trial</a>
-        <a href="/addRunner">Add Runner</a>
+{% extends 'bootstrap/base.html' %}
+
+{% block title %}
+    {% if title %}{{ title }} - Time Trial{% else %}Run Monash - Time Trial{% endif %}
+{% endblock %}
+
+{% block navbar %}
+    <nav class="navbar navbar-default">
+        <div class="container">
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav">
+                    <li><a href="/index">Home</a></li>
+                    <li><a href="{{ url_for('add_time_trial') }}">Time Trial</a></li>
+                    <li><a href="{{ url_for('add_runner') }}">Runner</a></li>
+                 </ul>
+            </div>
+        </div>
     </div>
-    <hr>
-     {% block content %}{% endblock %}
-</body>
-</html>
+    </nav>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-info" role="alert">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        {# application content needs to be provided in the app_content block #}
+        {% block app_content %}{% endblock %}
+    </div>
+{% endblock %}

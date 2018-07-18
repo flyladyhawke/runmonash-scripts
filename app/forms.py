@@ -1,6 +1,8 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, SelectField, DateField
+from wtforms import StringField, BooleanField, SubmitField, SelectField, DateField, TimeField, DateTimeField
+from wtforms.ext.sqlalchemy.fields import QuerySelectField
 from wtforms.validators import DataRequired
+from app.models import TimeTrial, Runner
 
 
 class AddTimeTrial(FlaskForm):
@@ -14,4 +16,12 @@ class AddRunner(FlaskForm):
     last_name = StringField('Last Name', validators=[DataRequired()])
     gender = SelectField('Gender', choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')])
     active = BooleanField('Active')
+    submit = SubmitField('Add')
+
+
+class AddResult(FlaskForm):
+    time_trial_id = QuerySelectField('Date', validators=[DataRequired()], query_factory=lambda: TimeTrial.query.all())
+    runner_id = QuerySelectField('Runner', validators=[DataRequired()], query_factory=lambda: Runner.query.all())
+    time = DateTimeField('Time')
+    comment = StringField('Comment')
     submit = SubmitField('Add')

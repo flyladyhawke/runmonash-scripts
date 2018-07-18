@@ -8,7 +8,7 @@ class TimeTrial(db.Model):
     results = db.relationship('TimeTrialResult', backref='time_trial', lazy='dynamic')
 
     def __repr__(self):
-        return '<TimeTrial {} {}>'.format(self.date, self.description)
+        return '{}'.format(self.date)
 
 
 class Runner(db.Model):
@@ -26,7 +26,7 @@ class Runner(db.Model):
         self.results.order_by(TimeTrialResult.time_trial.date.desc()).first()
 
     def __repr__(self):
-        return '<Runner {} {}>'.format(self.first_name, self.last_name)
+        return '{} {}'.format(self.first_name, self.last_name)
 
 
 class TimeTrialResult(db.Model):

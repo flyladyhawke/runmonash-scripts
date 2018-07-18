@@ -1,0 +1,18 @@
+<tr>
+    <td>
+        <a href="{{ url_for('time_trial_result', date=item.time_trial.date) }}">
+            {{ item.time_trial.date }}
+        </a>
+    </td>
+    <td>
+        <a href="{{ url_for('runner_result', id=item.runner.id) }}">
+            {{ item.runner }}
+        </a>
+    </td>
+    <td>
+        {{ item.time }}
+    </td>
+    <td>
+        {{ item.comment }}
+    </td>
+</tr>

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+    <h1>Runners</h1>
+    <div class="row">
+        <div class="col-md-4">
+            {{ wtf.quick_form(form) }}
+        </div>
+    </div>
+    <br/>
+    <table class="table">
+    <tr><th>Name</th><th>Active</th><th>Actions</th></tr>
+    {% for item in current %}
+        <tr><td>{{ item.first_name }} {{ item.last_name }}</td><td>{{ item.active }}</td><td>
+            <a href="{{ url_for('runner_result', id=item.id) }}"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
+        </td></tr>
+    {% endfor %}
+    </table>
+{% endblock %}
