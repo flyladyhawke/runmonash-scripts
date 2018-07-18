@@ -25,7 +25,7 @@ def add_time_trial():
         db.session.commit()
         flash('Your changes have been saved.')
         return redirect(url_for('add_time_trial'))
-    return render_template('event.html', title='Add', form=form, current=current)
+    return render_template('time_trial.html', title='Add', form=form, current=current)
 
 
 @app.route('/runner', methods=['GET', 'POST'])
