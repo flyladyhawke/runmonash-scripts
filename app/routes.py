@@ -2,7 +2,7 @@ from flask import render_template, url_for, flash, redirect, request
 from app import app, db
 from app.forms import AddTimeTrial, AddRunner, AddResult
 from app.models import TimeTrial, Runner, TimeTrialResult
-from src import time_trial
+from src.time_trial import TimeTrialAnalysis
 
 
 @app.route('/')
@@ -26,9 +26,10 @@ def time_trial():
         flash('Your changes have been saved.')
         return redirect(url_for('time_trial'))
     elif request.args.get('remove'):
-        runner = Runner.query.filter_by(id=request.args.get('id')).first_or_404()
-        db.session.delete(runner)
+        tt = TimeTrial.query.filter_by(date=request.args.get('date')).first_or_404()
+        db.session.delete(tt)
         db.session.commit()
+        current = TimeTrial.query.all()
     return render_template('time_trial.html', title='Add', form=form, current=current)
 
 
@@ -48,9 +49,10 @@ def runner():
         flash('Your changes have been saved.')
         return redirect(url_for('runner'))
     elif request.args.get('remove'):
-        tt = Runner.query.filter_by(date=request.args.get('date')).first_or_404()
+        tt = Runner.query.filter_by(id=request.args.get('id')).first_or_404()
         db.session.delete(tt)
         db.session.commit()
+        current = Runner.query.all()
     return render_template('runner.html', title='Add', form=form, current=current)
 
 
@@ -117,4 +119,15 @@ def runner_result(id):
         results=results.items,
         next_url=next_url,
         prev_url=prev_url
+    )
+
+
+@app.route('/parse_spreadsheet', methods=['GET', 'POST'])
+def parse_spreadsheet():
+    analysis = TimeTrialAnalysis()
+    data = analysis.get_runners()
+    return render_template(
+        'spreadsheet.html',
+        title="Parse Spreadsheet",
+        data=data
     )
