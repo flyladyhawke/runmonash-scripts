@@ -1,7 +1,7 @@
 {% extends 'bootstrap/base.html' %}
 
 {% block title %}
-    {% if title %}{{ title }} - Time Trial{% else %}Run Monash - Time Trial{% endif %}
+    {% if title %}Run Monash - {{ title }} - Time Trial{% else %}Run Monash - Time Trial{% endif %}
 {% endblock %}
 
 {% block navbar %}
@@ -12,6 +12,9 @@
                     <li><a href="/index">Home</a></li>
                     <li><a href="{{ url_for('time_trial') }}">Time Trial</a></li>
                     <li><a href="{{ url_for('runner') }}">Runner</a></li>
+                    {% if is_admin %}
+                    <li><a href="{{ url_for('admin') }}">Admin</a></li>
+                    {% endif %}
                  </ul>
             </div>
         </div>
@@ -28,7 +31,14 @@
             {% endfor %}
         {% endif %}
         {% endwith %}
-
+        <h1 style="border-bottom-color: #CCCCCC;
+border-bottom-style: dotted;
+border-bottom-width: 1px;
+color: #222222;
+font-size: 18px;
+font-weight: bold;
+margin-bottom: 1em;
+padding-bottom: 0.25em;">Run Monash - Time Trial</h1>
         {# application content needs to be provided in the app_content block #}
         {% block app_content %}{% endblock %}
     </div>

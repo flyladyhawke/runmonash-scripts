@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+    <h2>Admin</h2>
+    <ul class="list-group">
+        <li class="list-group-item"><a href="{{ url_for('parse_spreadsheet') }}">Parse Spreadsheet</a></li>
+        <li class="list-group-item"><a href="{{ url_for('parse_attending') }}">Parse Attending</a></li>
+        <li class="list-group-item"><a href="{{ url_for('create_printed_timesheet') }}">Printed Timesheet</a></li>
+        <li class="list-group-item"><a href="{{ url_for('create_printed_results') }}">Printed Results</a></li>
+     </ul>
+{% endblock %}

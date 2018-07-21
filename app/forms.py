@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, BooleanField, SubmitField, SelectField, DateField, TimeField, DateTimeField
+from wtforms import StringField, BooleanField, SubmitField, SelectField, DateField, TimeField, DateTimeField, FileField
 from wtforms.ext.sqlalchemy.fields import QuerySelectField
 from wtforms.validators import DataRequired
 from app.models import TimeTrial, Runner
@@ -22,6 +22,11 @@ class AddRunner(FlaskForm):
 class AddResult(FlaskForm):
     time_trial_id = QuerySelectField('Date', validators=[DataRequired()], query_factory=lambda: TimeTrial.query.all())
     runner_id = QuerySelectField('Runner', validators=[DataRequired()], query_factory=lambda: Runner.query.all())
-    time = DateTimeField('Time')
+    time = TimeField('Time')
     comment = StringField('Comment')
     submit = SubmitField('Add')
+
+
+class LoadAttending(FlaskForm):
+    attending = FileField('Attending Spreadsheet')
+    submit = SubmitField('Upload')

@@ -1,18 +1,23 @@
-<tr>
-    <td>
-        <a href="{{ url_for('time_trial_result', date=item.time_trial.date) }}">
-            {{ item.time_trial.date }}
-        </a>
-    </td>
-    <td>
-        <a href="{{ url_for('runner_result', id=item.runner.id) }}">
-            {{ item.runner }}
-        </a>
-    </td>
-    <td>
-        {{ item.time }}
-    </td>
-    <td>
-        {{ item.comment }}
-    </td>
-</tr>
+    <table class="table table-hover">
+    <tr><th>Date</th><th>Runner</th><th>Time</th><th>Comment</th></tr>
+    {% for item in results %}
+    <tr>
+        <td>
+            <a href="{{ url_for('time_trial_result', date=item.time_trial.date) }}">
+                {{ item.time_trial.date }}
+            </a>
+        </td>
+        <td>
+            <a href="{{ url_for('runner_result', id=item.runner.id) }}">
+                {{ item.runner }}
+            </a>
+        </td>
+        <td>
+            {{ item.time }}
+        </td>
+        <td>
+            {{ item.comment }}
+        </td>
+    </tr>
+    {% endfor %}
+    </table>

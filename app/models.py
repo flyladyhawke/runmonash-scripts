@@ -20,10 +20,19 @@ class Runner(db.Model):
     results = db.relationship('TimeTrialResult', backref='runner', lazy='dynamic')
 
     def get_pb(self):
-        self.results.order_by(TimeTrialResult.time.asc()).first()
+        # result = TimeTrialResult.query.filter_by(runner_id=self.id).first()
+        result = self.results.order_by(TimeTrialResult.time.asc()).first()
+        if result:
+            return result.time.strftime('%M:%S')
+        else:
+            return ''
 
     def get_latest_result(self):
-        self.results.order_by(TimeTrialResult.time_trial.date.desc()).first()
+        result = self.results.order_by(TimeTrialResult.id.desc()).first()
+        if result:
+            return result.time.strftime('%M:%S')
+        else:
+            return ''
 
     def __repr__(self):
         return '{} {}'.format(self.first_name, self.last_name)

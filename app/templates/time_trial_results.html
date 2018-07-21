@@ -2,18 +2,16 @@
 {% import 'bootstrap/wtf.html' as wtf %}
 
 {% block app_content %}
-    <h1>Results by Time Trial - {{ time_trial.date }}</h1>
+    <h2>Results by Time Trial - {{ time_trial.date }}</h2>
+    {% if is_admin == 1 %}
     <div class="row">
         <div class="col-md-4">
             {{ wtf.quick_form(form) }}
         </div>
     </div>
-    <br/>
-    <table class="table table-hover">
-    {% for item in results %}
-        {% include '_results.html' %}
-    {% endfor %}
-    </table>
+     <br/>
+    {% endif %}
+    {% include '_results.html' %}
     <nav aria-label="">
         <ul class="pager">
             <li class="previous{% if not prev_url %} disabled{% endif %}">

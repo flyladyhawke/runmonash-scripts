@@ -2,20 +2,47 @@
 {% import 'bootstrap/wtf.html' as wtf %}
 
 {% block app_content %}
-    <h1>Runners</h1>
+    <h2>Runners</h2>
+    {% if is_admin == 1 %}
     <div class="row">
         <div class="col-md-4">
             {{ wtf.quick_form(form) }}
         </div>
     </div>
     <br/>
+    {% endif %}
     <table class="table">
-        <tr><th>First Name</th><th>Last Name</th><th>Active</th><th>Gender</th></th><th>Actions</th></tr>
+        <tr><th>First Name</th><th>Last Name</th><th>Active</th><th>Gender</th></th><th>Results</th><th>PB</th><th>Latest</th><th>Actions</th></tr>
     {% for item in current %}
-        <tr><td>{{ item.first_name }}</td><td>{{ item.last_name }}</td><td>{{ item.active }}</td><td>{{ item.gender }}</td><td>
-            <a href="{{ url_for('runner_result', id=item.id) }}"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a> |
-            <a href="{{ url_for('runner', id=item.id, remove=True) }}"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a>
-        </td></tr>
+        <tr>
+            <td>{{ item.first_name }}</td>
+            <td>{{ item.last_name }}</td>
+            <td>{{ item.active }}</td>
+            <td>{{ item.gender }}</td>
+            <td>{{ item.results.count() }}</td>
+            <td>{{ item.get_pb() }}</td>
+            <td>{{ item.get_latest_result() }}</td>
+            <td>
+            <a href="{{ url_for('runner_result', id=item.id) }}"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
+            {% if is_admin == 1 %}
+             | <a href="{{ url_for('runner', id=item.id, remove=True) }}"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a>
+            {% endif %}
+            </td>
+        </tr>
     {% endfor %}
     </table>
+    <nav aria-label="">
+        <ul class="pager">
+            <li class="previous{% if not prev_url %} disabled{% endif %}">
+                <a href="{{ prev_url or '#' }}">
+                    <span aria-hidden="true">&larr;</span> Prev
+                </a>
+            </li>
+            <li class="next{% if not next_url %} disabled{% endif %}">
+                <a href="{{ next_url or '#' }}">
+                    Next <span aria-hidden="true">&rarr;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
 {% endblock %}

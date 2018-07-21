@@ -1,6 +1,6 @@
 from flask import render_template, url_for, flash, redirect, request
 from app import app, db
-from app.forms import AddTimeTrial, AddRunner, AddResult
+from app.forms import AddTimeTrial, AddRunner, AddResult, LoadAttending
 from app.models import TimeTrial, Runner, TimeTrialResult
 from src.time_trial import TimeTrialSpreadsheet
 
@@ -8,13 +8,15 @@ from src.time_trial import TimeTrialSpreadsheet
 @app.route('/index')
 def index():
     current = TimeTrial.query.all()
-    return render_template('index.html', title='Index', current=current)
+    is_admin = request.args.get('is_admin', 0, type=int)
+    return render_template('index.html', title='Index', current=current, is_admin=is_admin)
 
 
 @app.route('/time_trial', methods=['GET', 'POST'])
 def time_trial():
     form = AddTimeTrial()
     current = TimeTrial.query.all()
+    is_admin = request.args.get('is_admin', 0, type=int)
     if form.validate_on_submit():
         model = TimeTrial(
             date=form.date.data,
@@ -29,13 +31,14 @@ def time_trial():
         db.session.delete(tt)
         db.session.commit()
         current = TimeTrial.query.all()
-    return render_template('time_trial.html', title='Add', form=form, current=current)
+    return render_template('time_trial.html', title='Add', form=form, current=current, is_admin=is_admin)
 
 
 @app.route('/runner', methods=['GET', 'POST'])
 def runner():
     form = AddRunner()
     current = Runner.query.all()
+    is_admin = request.args.get('is_admin', 0, type=int)
     if form.validate_on_submit():
         model = Runner(
             first_name=form.first_name.data,
@@ -52,13 +55,32 @@ def runner():
         db.session.delete(tt)
         db.session.commit()
         current = Runner.query.all()
-    return render_template('runner.html', title='Add', form=form, current=current)
+
+    # page = request.args.get('page', 1, type=int)
+    # results = current.results.paginate(
+    #     page, app.config['POSTS_PER_PAGE'], False)
+    # next_url = url_for('runner', page=results.next_num) \
+    #     if results.has_next else None
+    # prev_url = url_for('runner', page=results.prev_num) \
+    #     if results.has_prev else None
+    return render_template(
+        'runner.html',
+        title='Runners',
+        form=form,
+        runner=runner,
+        current=current,
+        next_url=None,
+        prev_url=None,
+        is_admin=is_admin
+    )
+    return render_template('runner.html', title='Add', form=form, current=current, is_admin=is_admin)
 
 
 @app.route('/time_trial_result/<date>', methods=['GET', 'POST'])
 def time_trial_result(date):
     tt = TimeTrial.query.filter_by(date=date).first_or_404()
     form = AddResult()
+    is_admin = request.args.get('is_admin', 0, type=int)
     if form.validate_on_submit():
         model = TimeTrialResult(
             time_trial_id=form.time_trial_id.data.id,
@@ -84,7 +106,8 @@ def time_trial_result(date):
         time_trial=tt,
         results=results.items,
         next_url=next_url,
-        prev_url=prev_url
+        prev_url=prev_url,
+        is_admin=is_admin
     )
 
 
@@ -92,6 +115,7 @@ def time_trial_result(date):
 def runner_result(id):
     runner = Runner.query.filter_by(id=id).first_or_404()
     form = AddResult()
+    is_admin = request.args.get('is_admin', 0, type=int)
     if form.validate_on_submit():
         model = TimeTrialResult(
             time_trial_id=form.time_trial_id.data.id,
@@ -117,7 +141,16 @@ def runner_result(id):
         runner=runner,
         results=results.items,
         next_url=next_url,
-        prev_url=prev_url
+        prev_url=prev_url,
+        is_admin=is_admin
+    )
+
+
+@app.route('/admin')
+def admin():
+    return render_template(
+        'admin/admin.html',
+        title="Admin",
     )
 
 
@@ -125,6 +158,7 @@ def runner_result(id):
 def parse_spreadsheet():
     Runner.query.delete()
     TimeTrial.query.delete()
+    TimeTrialResult.query.delete()
     sheet = TimeTrialSpreadsheet()
 
     data_runners = sheet.get_runners_from()
@@ -162,7 +196,35 @@ def parse_spreadsheet():
         + '<br/>'.join(errors)
 
     return render_template(
-        'spreadsheet.html',
+        'admin/spreadsheet.html',
         title="Parse Spreadsheet",
         data=response
+    )
+
+
+@app.route('/parse_attending', methods=['GET', 'POST'])
+def parse_attending():
+    form = LoadAttending()
+    if form.validate_on_submit():
+        print('test')
+    return render_template(
+        'admin/attending.html',
+        title="Parse Attending",
+        form=form
+    )
+
+
+@app.route('/printed_timesheet', methods=['GET', 'POST'])
+def create_printed_timesheet():
+    return render_template(
+        'index.html',
+        title="Print TimeSheet",
+    )
+
+
+@app.route('/printed_result', methods=['GET', 'POST'])
+def create_printed_results():
+    return render_template(
+        'index.html',
+        title="Print Results",
     )
