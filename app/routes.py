@@ -2,8 +2,7 @@ from flask import render_template, url_for, flash, redirect, request
 from app import app, db
 from app.forms import AddTimeTrial, AddRunner, AddResult
 from app.models import TimeTrial, Runner, TimeTrialResult
-from src.time_trial import TimeTrialAnalysis
-
+from src.time_trial import TimeTrialSpreadsheet
 
 @app.route('/')
 @app.route('/index')
@@ -108,9 +107,9 @@ def runner_result(id):
     page = request.args.get('page', 1, type=int)
     results = runner.results.paginate(
         page, app.config['POSTS_PER_PAGE'], False)
-    next_url = url_for('id', id=runner.id, page=results.next_num) \
+    next_url = url_for('runner_result', id=runner.id, page=results.next_num) \
         if results.has_next else None
-    prev_url = url_for('id', id=runner.id, page=results.prev_num) \
+    prev_url = url_for('runner_result', id=runner.id, page=results.prev_num) \
         if results.has_prev else None
     return render_template(
         'runner_results.html',
@@ -124,10 +123,46 @@ def runner_result(id):
 
 @app.route('/parse_spreadsheet', methods=['GET', 'POST'])
 def parse_spreadsheet():
-    analysis = TimeTrialAnalysis()
-    data = analysis.get_runners()
+    Runner.query.delete()
+    TimeTrial.query.delete()
+    sheet = TimeTrialSpreadsheet()
+
+    data_runners = sheet.get_runners_from()
+    for k, v in data_runners.items():
+        runner = Runner()
+        runner.active = v['active']
+        runner.gender = v['gender']
+        runner.first_name = v['first_name']
+        runner.last_name = v['last_name']
+        db.session.add(runner)
+
+    data_trials = sheet.get_time_trials_from()
+    for k, v in data_trials.items():
+        trial = TimeTrial()
+        trial.date = v['date']
+        db.session.add(trial)
+    db.session.commit()
+
+    results = sheet.get_time_trials_results_from()
+    errors = []
+    for v in results:
+        runner = Runner.query.filter_by(first_name=v['first_name'],last_name=v['last_name']).first()
+        time_trial = TimeTrial.query.filter_by(date=v['time_trial_date'].date()).first()
+
+        trial = TimeTrialResult()
+        trial.runner_id = runner.id
+        trial.time_trial_id = time_trial.id
+        trial.time = v['time']
+        db.session.add(trial)
+    db.session.commit()
+
+    response = str(len(data_runners)) + " runner records added<br/>" \
+        + str(len(data_trials)) + " time trial records added<br/>" \
+        + str(len(results)) + " time trial result records added" \
+        + '<br/>'.join(errors)
+
     return render_template(
         'spreadsheet.html',
         title="Parse Spreadsheet",
-        data=data
+        data=response
     )

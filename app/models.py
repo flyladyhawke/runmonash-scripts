@@ -19,10 +19,10 @@ class Runner(db.Model):
     active = db.Column(db.Integer)
     results = db.relationship('TimeTrialResult', backref='runner', lazy='dynamic')
 
-    def get_pb(self, user):
+    def get_pb(self):
         self.results.order_by(TimeTrialResult.time.asc()).first()
 
-    def get_latest_result(self, user):
+    def get_latest_result(self):
         self.results.order_by(TimeTrialResult.time_trial.date.desc()).first()
 
     def __repr__(self):
@@ -33,7 +33,7 @@ class TimeTrialResult(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     time_trial_id = db.Column(db.Integer, db.ForeignKey('time_trial.id'))
     runner_id = db.Column(db.Integer, db.ForeignKey('runner.id'))
-    time = db.Column(db.DateTime)
+    time = db.Column(db.Time)
     comment = db.Column(db.String(50))
 
     def __repr__(self):

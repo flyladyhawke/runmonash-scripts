@@ -1,7 +1,9 @@
 from math import floor, ceil
 from jinja2 import Environment, FileSystemLoader
 from openpyxl import load_workbook
-#import pandas as pd
+from datetime import datetime
+import pandas as pd
+import numpy as np
 
 
 class TimeTrialUtils:
@@ -98,26 +100,135 @@ class TimeTrialUtils:
         return template.render({'cols': self.cols, 'header': header, 'data': data})
 
 
-class TimeTrialAnalysis:
+class TimeTrialSpreadsheet:
 
     wb = False
+    runners = {}
+    time_trials = {}
 
     def __init__(self):
         self.wb = load_workbook('Run Monash Time Trial.xlsm')
 
-    def print_details(self):
-        print(self.wb.sheetnames)
+    def get_runners_from(self):
+        self.runners = {}
+        ws = self.wb['Names']
+        data = ws.values
+        data = list(data)
+        for i in range(10, ws.max_row):
+            name = data[i][1]
+            if name == '' or name is None:
+                continue
 
-        sheet = self.wb['Names']
-        print("Max row: " + str(sheet.max_row))
-        print("Max column: " + str(sheet.max_column))
+            active = data[i][0]
+            if active == 'Y':
+                active = 1
+            else:
+                active = 0
 
-        data = sheet['A10:AT783']
-        #print(data)
+            gender = data[i][2]
+            if gender == '' or gender is None:
+                gender = 'O'
+            else:
+                gender = gender
 
-        #df = pd.DataFrame(data)
-        #pd.read_csv('Run Monash Time Trial.xlsm')
+            names = self.get_names(data[i][1])
 
-        #data = sheet.values
-        #cols = next(data)[1:]
-        #print(cols)
+            self.runners[i] = {
+                'active': active,
+                'gender': gender,
+                'first_name': names['first_name'],
+                'last_name': names['last_name'],
+            }
+        return self.runners
+
+    def get_time_trials_from(self):
+        self.time_trials = {}
+        ws = self.wb['Names']
+        data = ws.values
+        data = list(data)
+        for i in range(1, ws.max_column):
+            trial_date = data[7][i]
+            if trial_date is None:
+                continue
+
+            if type(trial_date) is not datetime:
+                trial_date = trial_date.replace("'", "")
+                trial_date = datetime.strptime(trial_date, '%d/%m/%Y')
+
+            self.time_trials[i] = {'date': trial_date}
+
+        return self.time_trials
+
+    def get_time_trials_results_from(self):
+        time_trial_results = []
+        ws = self.wb['Names']
+        data = ws.values
+        data = list(data)
+        for i in range(10, ws.max_row):
+            name = data[i][1]
+            if name == '' or name is None:
+                continue
+
+            runner = self.runners[i]
+            for j in range(4, ws.max_column):
+                if not data[8][j] == 'TT':
+                    continue
+                time = data[i][j]
+                if time == '' or time is None:
+                    continue
+
+                time = self.get_time(time)
+
+                time_trial_date = [v['date'] for k, v in self.time_trials.items() if k == j]
+
+                time_trial_results.append({
+                    'time_trial_date': time_trial_date[0],
+                    'first_name': runner['first_name'],
+                    'last_name': runner['last_name'],
+                    'time': time,
+                })
+        return time_trial_results
+
+    @staticmethod
+    def get_names(name):
+        if name == '' or name is None:
+            return False
+
+        parts = name.split(' ')
+        if len(parts) > 1:
+            first_name = parts[0]
+            last_name = ' '.join(parts[1:])
+        else:
+            first_name = name
+            last_name = ''
+        return {'first_name': first_name, 'last_name': last_name}
+
+    @staticmethod
+    def get_time(time):
+        if type(time) is float or type(time) is int or type(time) is str:
+            time = str(time)
+            pos = time.find('.')
+            time = time.replace('.', ':')
+            if pos == -1 and len(time) == 1:
+                time = datetime.strptime('0' + time, '%M')
+            elif pos == -1 and len(time) == 2:
+                time = datetime.strptime(time, '%M')
+            elif len(time) == 3:
+                time = datetime.strptime('0' + time + '0', '%M:%S')
+            elif pos == 2 and len(time) == 4:
+                time = datetime.strptime(time + '0', '%M:%S')
+            elif len(time) == 4:
+                time = datetime.strptime('0' + time, '%M:%S')
+            elif len(time) == 5:
+                time = datetime.strptime(time, '%M:%S')
+            time = time.time()
+
+        return time
+
+
+class TimeTrialAnalysis:
+
+    def __init__(self):
+        print('test')
+        #df = pd.DataFrame(data=runners, columns=["active","name",'gender']) # , columns=cols)
+        #df = pd.DataFrame(ws.values)
