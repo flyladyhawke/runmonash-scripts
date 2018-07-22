@@ -3,6 +3,9 @@ from app import app, db
 from app.forms import AddTimeTrial, AddRunner, AddResult, LoadAttending
 from app.models import TimeTrial, Runner, TimeTrialResult
 from src.time_trial import TimeTrialSpreadsheet
+from werkzeug.utils import secure_filename
+import os
+
 
 @app.route('/')
 @app.route('/index')
@@ -206,7 +209,11 @@ def parse_spreadsheet():
 def parse_attending():
     form = LoadAttending()
     if form.validate_on_submit():
-        print('test')
+        f = form.attending.data
+        filename = secure_filename(f.filename)
+        f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        flash('Attendance file uploaded')
+
     return render_template(
         'admin/attending.html',
         title="Parse Attending",

@@ -143,6 +143,10 @@ class TimeTrialSpreadsheet:
 
     def get_time_trials_from(self):
         self.time_trials = {}
+        # add a place holder for existing PBs
+        trial_date = datetime.strptime('01/01/2015', '%d/%m/%Y')
+        self.time_trials[3] = {'date': trial_date}
+
         ws = self.wb['Names']
         data = ws.values
         data = list(data)
@@ -170,8 +174,8 @@ class TimeTrialSpreadsheet:
                 continue
 
             runner = self.runners[i]
-            for j in range(4, ws.max_column):
-                if not data[8][j] == 'TT':
+            for j in range(3, ws.max_column):
+                if not data[8][j] == 'TT' and not j == 3:
                     continue
                 time = data[i][j]
                 if time == '' or time is None:
@@ -222,7 +226,6 @@ class TimeTrialSpreadsheet:
             elif len(time) == 5:
                 time = datetime.strptime(time, '%M:%S')
             time = time.time()
-
         return time
 
 

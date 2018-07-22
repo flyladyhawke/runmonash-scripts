@@ -2,6 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, BooleanField, SubmitField, SelectField, DateField, TimeField, DateTimeField, FileField
 from wtforms.ext.sqlalchemy.fields import QuerySelectField
 from wtforms.validators import DataRequired
+from flask_wtf.file import FileField, FileAllowed, FileRequired
 from app.models import TimeTrial, Runner
 
 
@@ -28,5 +29,8 @@ class AddResult(FlaskForm):
 
 
 class LoadAttending(FlaskForm):
-    attending = FileField('Attending Spreadsheet')
+    attending = FileField('Attending Spreadsheet', validators=[
+        FileRequired(),
+        FileAllowed(['xlsx'], 'excel (.xlsx) only!')
+    ])
     submit = SubmitField('Upload')
