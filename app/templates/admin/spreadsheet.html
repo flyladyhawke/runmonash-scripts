@@ -1,6 +1,13 @@
 {% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
 
 {% block app_content %}
     <h2>Spreadsheet Data</h2>
-    {{ data }}
+    Click on upload button if you want to use the included result spreadsheet
+    {{ message }}
+    <div class="row">
+        <div class="col-md-4">
+            {{ wtf.quick_form(form) }}
+        </div>
+    </div>
 {% endblock %}

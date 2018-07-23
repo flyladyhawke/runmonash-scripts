@@ -1,8 +1,8 @@
 from flask import render_template, url_for, flash, redirect, request
 from app import app, db
-from app.forms import AddTimeTrial, AddRunner, AddResult, LoadAttending
+from app.forms import AddTimeTrial, AddRunner, AddResult, LoadAttending, LoadResults
 from app.models import TimeTrial, Runner, TimeTrialResult
-from src.time_trial import TimeTrialSpreadsheet
+from src.time_trial import TimeTrialSpreadsheet, TimeTrialUtils
 from werkzeug.utils import secure_filename
 import os
 
@@ -159,73 +159,121 @@ def admin():
 
 @app.route('/parse_spreadsheet', methods=['GET', 'POST'])
 def parse_spreadsheet():
-    Runner.query.delete()
-    TimeTrial.query.delete()
-    TimeTrialResult.query.delete()
-    sheet = TimeTrialSpreadsheet()
+    form = LoadResults()
+    response = ''
+    if form.validate_on_submit():
+        f = form.attending.data
+        path = False
+        if f:
+            filename = secure_filename(f.filename)
+            path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            f.save(path)
 
-    data_runners = sheet.get_runners_from()
-    for k, v in data_runners.items():
-        runner = Runner()
-        runner.active = v['active']
-        runner.gender = v['gender']
-        runner.first_name = v['first_name']
-        runner.last_name = v['last_name']
-        db.session.add(runner)
+        Runner.query.delete()
+        TimeTrial.query.delete()
+        TimeTrialResult.query.delete()
+        sheet = TimeTrialSpreadsheet(path)
 
-    data_trials = sheet.get_time_trials_from()
-    for k, v in data_trials.items():
-        trial = TimeTrial()
-        trial.date = v['date']
-        db.session.add(trial)
-    db.session.commit()
+        data_runners = sheet.get_runners_from()
+        for k, v in data_runners.items():
+            runner = Runner()
+            runner.active = v['active']
+            runner.gender = v['gender']
+            runner.first_name = v['first_name']
+            runner.last_name = v['last_name']
+            db.session.add(runner)
 
-    results = sheet.get_time_trials_results_from()
-    errors = []
-    for v in results:
-        runner = Runner.query.filter_by(first_name=v['first_name'],last_name=v['last_name']).first()
-        time_trial = TimeTrial.query.filter_by(date=v['time_trial_date'].date()).first()
+        data_trials = sheet.get_time_trials_from()
+        for k, v in data_trials.items():
+            trial = TimeTrial()
+            trial.date = v['date']
+            db.session.add(trial)
+        db.session.commit()
 
-        trial = TimeTrialResult()
-        trial.runner_id = runner.id
-        trial.time_trial_id = time_trial.id
-        trial.time = v['time']
-        db.session.add(trial)
-    db.session.commit()
+        results = sheet.get_time_trials_results_from()
+        errors = []
+        for v in results:
+            runner = Runner.query.filter_by(first_name=v['first_name'],last_name=v['last_name']).first()
+            time_trial = TimeTrial.query.filter_by(date=v['time_trial_date'].date()).first()
 
-    response = str(len(data_runners)) + " runner records added<br/>" \
-        + str(len(data_trials)) + " time trial records added<br/>" \
-        + str(len(results)) + " time trial result records added" \
-        + '<br/>'.join(errors)
+            trial = TimeTrialResult()
+            trial.runner_id = runner.id
+            trial.time_trial_id = time_trial.id
+            trial.time = v['time']
+            db.session.add(trial)
+        db.session.commit()
+
+        response = str(len(data_runners)) + " runner records added, " \
+            + str(len(data_trials)) + " time trial records added, " \
+            + str(len(results)) + " time trial result records added" \
+            + ', '.join(errors)
 
     return render_template(
         'admin/spreadsheet.html',
         title="Parse Spreadsheet",
-        data=response
+        form=form,
+        message=response
     )
 
 
 @app.route('/parse_attending', methods=['GET', 'POST'])
 def parse_attending():
     form = LoadAttending()
+    message = ''
     if form.validate_on_submit():
         f = form.attending.data
         filename = secure_filename(f.filename)
-        f.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        f.save(path)
+
+        for runner in Runner.query.all():
+            runner.active = 0
+        db.session.commit()
+
+        names = TimeTrialUtils.make_active(path)
+        missing = []
+        for v in names:
+            runner = Runner.query.filter_by(first_name=v['first_name'],last_name=v['last_name']).first()
+            if runner:
+                runner.active = 0
+            else:
+                missing.append(v)
+        db.session.commit()
+        message = 'Attendance file uploaded'
+        message += 'The following were not found'
+        message += str(missing)
+
         flash('Attendance file uploaded')
 
     return render_template(
         'admin/attending.html',
         title="Parse Attending",
-        form=form
+        form=form,
+        message=message
     )
 
 
 @app.route('/printed_timesheet', methods=['GET', 'POST'])
 def create_printed_timesheet():
+    form = LoadResults()
+    response = ''
+    if form.validate_on_submit():
+        f = form.attending.data
+        path = False
+        if f:
+            filename = secure_filename(f.filename)
+            path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            f.save(path)
+
+        sheet = TimeTrialSpreadsheet(path)
+        active_runners = Runner.query.filter_by(active=1)
+        template = sheet.get_template_for(active_runners)
+
     return render_template(
-        'index.html',
+        'admin/spreadsheet.html',
         title="Print TimeSheet",
+        form=form,
+        message=response
     )
 
 

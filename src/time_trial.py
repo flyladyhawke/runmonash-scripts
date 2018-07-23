@@ -99,6 +99,56 @@ class TimeTrialUtils:
         template = self.template_env.get_template("results.html")
         return template.render({'cols': self.cols, 'header': header, 'data': data})
 
+    @staticmethod
+    def get_names(name):
+        if name == '' or name is None:
+            return False
+
+        parts = name.strip().split(' ')
+        if len(parts) > 1:
+            first_name = parts[0].capitalize()
+            last_name = ' '.join(parts[1:])
+        else:
+            first_name = name
+            last_name = ''
+        return {'first_name': first_name, 'last_name': last_name}
+
+    @staticmethod
+    def get_time(time):
+        if type(time) is float or type(time) is int or type(time) is str:
+            time = str(time)
+            pos = time.find('.')
+            time = time.replace('.', ':')
+            if pos == -1 and len(time) == 1:
+                time = datetime.strptime('0' + time, '%M')
+            elif pos == -1 and len(time) == 2:
+                time = datetime.strptime(time, '%M')
+            elif len(time) == 3:
+                time = datetime.strptime('0' + time + '0', '%M:%S')
+            elif pos == 2 and len(time) == 4:
+                time = datetime.strptime(time + '0', '%M:%S')
+            elif len(time) == 4:
+                time = datetime.strptime('0' + time, '%M:%S')
+            elif len(time) == 5:
+                time = datetime.strptime(time, '%M:%S')
+            time = time.time()
+        return time
+
+    @staticmethod
+    def make_active(filename):
+        wb = load_workbook(filename)
+        ws = wb['Sheet1']
+        data = ws.values
+        data = list(data)
+        names = []
+        for i in range(2, ws.max_row):
+            for j in range(1, ws.max_column):
+                name = data[i][j]
+                if name == '' or name is None:
+                    continue
+                names.append(TimeTrialUtils.get_names(name))
+        return names
+
 
 class TimeTrialSpreadsheet:
 
@@ -106,8 +156,13 @@ class TimeTrialSpreadsheet:
     runners = {}
     time_trials = {}
 
-    def __init__(self):
-        self.wb = load_workbook('Run Monash Time Trial.xlsm')
+    def __init__(self, path):
+        if not path:
+            path = 'Run Monash Time Trial.xlsm'
+        self.wb = load_workbook(path)
+        ws = self.wb['Names']
+        data = ws.values
+        data = list(data)
 
     def get_runners_from(self):
         self.runners = {}
@@ -131,7 +186,7 @@ class TimeTrialSpreadsheet:
             else:
                 gender = gender
 
-            names = self.get_names(data[i][1])
+            names = TimeTrialUtils.get_names(data[i][1])
 
             self.runners[i] = {
                 'active': active,
@@ -163,6 +218,9 @@ class TimeTrialSpreadsheet:
 
         return self.time_trials
 
+    def get_template_from(self, names):
+        ws = self.wb['Template']
+
     def get_time_trials_results_from(self):
         time_trial_results = []
         ws = self.wb['Names']
@@ -181,7 +239,7 @@ class TimeTrialSpreadsheet:
                 if time == '' or time is None:
                     continue
 
-                time = self.get_time(time)
+                time = TimeTrialUtils.get_time(time)
 
                 time_trial_date = [v['date'] for k, v in self.time_trials.items() if k == j]
 
@@ -192,41 +250,6 @@ class TimeTrialSpreadsheet:
                     'time': time,
                 })
         return time_trial_results
-
-    @staticmethod
-    def get_names(name):
-        if name == '' or name is None:
-            return False
-
-        parts = name.split(' ')
-        if len(parts) > 1:
-            first_name = parts[0]
-            last_name = ' '.join(parts[1:])
-        else:
-            first_name = name
-            last_name = ''
-        return {'first_name': first_name, 'last_name': last_name}
-
-    @staticmethod
-    def get_time(time):
-        if type(time) is float or type(time) is int or type(time) is str:
-            time = str(time)
-            pos = time.find('.')
-            time = time.replace('.', ':')
-            if pos == -1 and len(time) == 1:
-                time = datetime.strptime('0' + time, '%M')
-            elif pos == -1 and len(time) == 2:
-                time = datetime.strptime(time, '%M')
-            elif len(time) == 3:
-                time = datetime.strptime('0' + time + '0', '%M:%S')
-            elif pos == 2 and len(time) == 4:
-                time = datetime.strptime(time + '0', '%M:%S')
-            elif len(time) == 4:
-                time = datetime.strptime('0' + time, '%M:%S')
-            elif len(time) == 5:
-                time = datetime.strptime(time, '%M:%S')
-            time = time.time()
-        return time
 
 
 class TimeTrialAnalysis:

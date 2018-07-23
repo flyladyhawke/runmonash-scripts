@@ -34,3 +34,10 @@ class LoadAttending(FlaskForm):
         FileAllowed(['xlsx'], 'excel (.xlsx) only!')
     ])
     submit = SubmitField('Upload')
+
+
+class LoadResults(FlaskForm):
+    attending = FileField('Results Spreadsheet', validators=[
+        FileAllowed(['xlsx'], 'excel (.xlsx) only!')
+    ])
+    submit = SubmitField('Upload')
