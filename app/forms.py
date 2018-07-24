@@ -23,7 +23,7 @@ class AddRunner(FlaskForm):
 class AddResult(FlaskForm):
     time_trial_id = QuerySelectField('Date', validators=[DataRequired()], query_factory=lambda: TimeTrial.query.all())
     runner_id = QuerySelectField('Runner', validators=[DataRequired()], query_factory=lambda: Runner.query.all())
-    time = TimeField('Time')
+    time = TimeField('Time', format='%M:%S')
     comment = StringField('Comment')
     submit = SubmitField('Add')
 

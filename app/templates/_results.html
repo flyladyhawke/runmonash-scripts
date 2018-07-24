@@ -1,5 +1,5 @@
     <table class="table table-hover">
-    <tr><th>Date</th><th>Runner</th><th>Time</th><th>Comment</th></tr>
+    <tr><th>Date</th><th>Runner</th><th>Time</th><th>Comment</th>{% if is_admin == 1 %}<th>Actions</th>{% endif %}</tr>
     {% for item in results %}
     <tr>
         <td>
@@ -13,10 +13,15 @@
             </a>
         </td>
         <td>
-            {{ item.time }}
+            {{ item.time.strftime('%M:%S') }}
         </td>
         <td>
             {{ item.comment }}
+        </td>
+        <td>
+            {% if is_admin == 1 %}
+             <a href="{{ url_for('runner', id=item.id, remove=True) }}"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a>
+            {% endif %}
         </td>
     </tr>
     {% endfor %}

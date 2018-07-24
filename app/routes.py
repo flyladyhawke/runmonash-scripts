@@ -97,7 +97,7 @@ def time_trial_result(date):
         form.time_trial_id.data = tt
 
     page = request.args.get('page', 1, type=int)
-    results = tt.results.paginate(
+    results = tt.results.order_by(TimeTrialResult.runner_id.asc()).paginate(
         page, app.config['POSTS_PER_PAGE'], False)
     next_url = url_for('time_trial_result', date=tt.date, page=results.next_num) \
         if results.has_next else None
@@ -132,7 +132,7 @@ def runner_result(id):
         form.runner_id.data = runner
 
     page = request.args.get('page', 1, type=int)
-    results = runner.results.paginate(
+    results = runner.results.order_by(TimeTrialResult.time_trial_id.asc()).paginate(
         page, app.config['POSTS_PER_PAGE'], False)
     next_url = url_for('runner_result', id=runner.id, page=results.next_num) \
         if results.has_next else None
@@ -151,9 +151,11 @@ def runner_result(id):
 
 @app.route('/admin')
 def admin():
+    is_admin = request.args.get('is_admin', 0, type=int)
     return render_template(
         'admin/admin.html',
         title="Admin",
+        is_admin=is_admin
     )
 
 

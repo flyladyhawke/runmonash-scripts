@@ -2,10 +2,14 @@
 
 {% block app_content %}
     <h2>Admin</h2>
+    {% if is_admin >= 1 %}
     <ul class="list-group">
-        <li class="list-group-item"><a href="{{ url_for('parse_spreadsheet') }}">Parse Spreadsheet</a></li>
+        {% if is_admin == 2 %}<li class="list-group-item"><a href="{{ url_for('parse_spreadsheet') }}">Parse Spreadsheet</a></li>{% endif %}
         <li class="list-group-item"><a href="{{ url_for('parse_attending') }}">Parse Attending</a></li>
         <li class="list-group-item"><a href="{{ url_for('create_printed_timesheet') }}">Printed Timesheet</a></li>
         <li class="list-group-item"><a href="{{ url_for('create_printed_results') }}">Printed Results</a></li>
      </ul>
+    {% else %}
+        You do not have permissions.
+    {% endif %}
 {% endblock %}
