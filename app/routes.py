@@ -149,9 +149,11 @@ def runner_result(id):
     #    times.append(item/)
     #lnprice = numpy.log(times)
     plt.plot(times)
-    filename = 'static/images/runner_'+id+'.png'
-    plt.savefig(filename)
-    url = '/' + filename
+    filename = 'images/runner_'+id+'.png'
+    path = 'app/static/' + filename
+    plt.savefig(path)
+    plt.clf()
+    url = url_for('static', filename=filename)
     return render_template(
         'runner_results.html',
         form=form,
@@ -160,6 +162,7 @@ def runner_result(id):
         next_url=next_url,
         prev_url=prev_url,
         is_admin=is_admin,
+        url=url,
     )
 
 
