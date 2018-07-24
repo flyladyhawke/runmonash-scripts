@@ -4,6 +4,8 @@ from app.forms import AddTimeTrial, AddRunner, AddResult, LoadAttending, LoadRes
 from app.models import TimeTrial, Runner, TimeTrialResult
 from src.time_trial import TimeTrialSpreadsheet, TimeTrialUtils
 from werkzeug.utils import secure_filename
+import matplotlib.pyplot as plt
+import numpy as numpy
 import os
 
 
@@ -132,12 +134,24 @@ def runner_result(id):
         form.runner_id.data = runner
 
     page = request.args.get('page', 1, type=int)
-    results = runner.results.order_by(TimeTrialResult.time_trial_id.asc()).paginate(
+    results = runner.results
+
+
+    results =results.order_by(TimeTrialResult.time_trial_id.asc()).paginate(
         page, app.config['POSTS_PER_PAGE'], False)
     next_url = url_for('runner_result', id=runner.id, page=results.next_num) \
         if results.has_next else None
     prev_url = url_for('runner_result', id=runner.id, page=results.prev_num) \
         if results.has_prev else None
+
+    times = [v.time for v in results.items]
+    #for item in results:
+    #    times.append(item/)
+    #lnprice = numpy.log(times)
+    plt.plot(times)
+    filename = 'static/images/runner_'+id+'.png'
+    plt.savefig(filename)
+    url = '/' + filename
     return render_template(
         'runner_results.html',
         form=form,
@@ -145,7 +159,7 @@ def runner_result(id):
         results=results.items,
         next_url=next_url,
         prev_url=prev_url,
-        is_admin=is_admin
+        is_admin=is_admin,
     )
 
 
