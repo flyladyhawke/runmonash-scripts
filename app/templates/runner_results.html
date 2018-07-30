@@ -3,7 +3,7 @@
 
 {% block app_content %}
     <h2 class="sub_title">Results by Runner - {{ runner.first_name }} {{ runner.last_name }}</h2>
-    {% if current_user.is_authenticated and current_user.level >= 2 %}
+    {% if current_user.is_authenticated and (current_user.level >= 2 or current_user.id == runner.id) %}
     <div class="row">
         <div class="col-md-4">
             {{ wtf.quick_form(form) }}

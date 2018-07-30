@@ -41,6 +41,39 @@ def time_trial():
     return render_template('time_trial.html', title='Add', form=form, current=current)
 
 
+@app.route('/runner/update/<id>', methods=['GET', 'POST'])
+def runner_update(id):
+    current = Runner.query.all()
+    tt = Runner.query.filter_by(id=id).first_or_404()
+    form = AddRunner()
+    form.populate_obj(tt)
+    if form.validate_on_submit():
+        tt.first_name=form.first_name.data
+        tt.last_name=form.last_name.data
+        tt.gender=form.gender.data
+        tt.active=form.active.data
+        db.session.commit()
+        flash('Your changes have been saved.')
+        return redirect(url_for('runner_result', id=id))
+    return render_template(
+        'runner.html',
+        title='Runners',
+        form=form,
+        runner=runner,
+        current=current,
+        next_url=None,
+        prev_url=None,
+    )
+
+
+@app.route('/runner/delete/<id>', methods=['GET', 'POST'])
+def runner_delete(id):
+    tt = Runner.query.filter_by(id=request.args.get('id')).first_or_404()
+    db.session.delete(tt)
+    db.session.commit()
+    return redirect(url_for('runner'))
+
+
 @app.route('/runner', methods=['GET', 'POST'])
 def runner():
     form = AddRunner()
@@ -114,27 +147,36 @@ def time_trial_result(date):
     )
 
 
-# Func formatter
-def major_formatter(x, pos):
-    #time = datetime64
-    return type(x) #x.strftime('%M:%S')
-
-
 @app.route('/runner_result/<id>', methods=['GET', 'POST'])
 def runner_result(id):
     runner = Runner.query.filter_by(id=id).first_or_404()
-    form = AddResult()
-    if form.validate_on_submit():
-        model = TimeTrialResult(
-            time_trial_id=form.time_trial_id.data.id,
-            runner_id=form.runner_id.data.id,
-            time=form.time.data,
-            comment=form.comment.data
-        )
-        db.session.add(model)
-        db.session.commit()
-    elif request.method == 'GET':
-        form.runner_id.data = runner
+    if current_user.is_authenticated and current_user.id == runner.id:
+        form = AddRunner()
+        form.populate_obj(runner)
+        form.first_name = runner.first_name
+        # form.first_name = runner.first_name
+        # if form.validate_on_submit():
+        #     runner.first_name=form.first_name.data,
+        #     runner.last_name=form.last_name.data,
+        #     runner.gender=form.gender.data,
+        #     runner.active=form.active.data
+        #     # db.session.commit()
+        # elif request.method == 'GET':
+        #     form.populate_obj(runner)
+        #     form.first_name = runner.first_name
+    else:
+        form = AddResult()
+        if form.validate_on_submit():
+            model = TimeTrialResult(
+                time_trial_id=form.time_trial_id.data.id,
+                runner_id=form.runner_id.data.id,
+                time=form.time.data,
+                comment=form.comment.data
+            )
+            db.session.add(model)
+            db.session.commit()
+        elif request.method == 'GET':
+            form.runner_id.data = runner
 
     page = request.args.get('page', 1, type=int)
     results = runner.results
@@ -146,29 +188,7 @@ def runner_result(id):
     prev_url = url_for('runner_result', id=runner.id, page=results.prev_num) \
         if results.has_prev else None
 
-    times = [v.time for v in results.items]
-    time_trial_dates = [v.time_trial.date.strftime('%b %Y') for v in results.items]
-    #for item in results:
-    #    times.append(item/)
-    #lnprice = numpy.log(times)
-    # .strftime('%M:%S')
-    ax = plt.plot(time_trial_dates, times)
-    plt.xticks(rotation=30)
-    plt.xlabel('Time Trial')
-    plt.ylabel('Time')
-    #plt.gca().yaxis.set_major_formatter(dates2.DateFormatter('%M:%S'))
-    plt.gca().yaxis.set_major_formatter(ticker.FuncFormatter(major_formatter))
-    #plt.gca().yaxis.set_major_formatter( mdates.DateFormatter('%Y-%m-%d'))
-
-
-    #plt.axis(dates)
-    #plt.axes()
-    #plt.set_formatter(dates.DateFormatter('%H:%M'))
-    filename = 'images/runner_'+id+'.png'
-    path = 'app/static/' + filename
-    plt.savefig(path)
-    plt.clf()
-    url = url_for('static', filename=filename)
+    url = make_graph(id, results)
     return render_template(
         'runner_results.html',
         form=form,
@@ -177,7 +197,6 @@ def runner_result(id):
         next_url=next_url,
         prev_url=prev_url,
         url=url,
-        data=times
     )
 
 
@@ -383,3 +402,35 @@ def is_admin():
 
 def is_sys_admin():
     return current_user.is_authenticated and current_user.level >= 3
+
+
+def make_graph(id, results):
+    times = [v.time for v in results.items]
+    time_trial_dates = [v.time_trial.date.strftime('%b %Y') for v in results.items]
+    #for item in results:
+    #    times.append(item/)
+    #lnprice = numpy.log(times)
+    # .strftime('%M:%S')
+    ax = plt.plot(time_trial_dates, times)
+    plt.xticks(rotation=30)
+    plt.xlabel('Time Trial')
+    plt.ylabel('Time')
+    #plt.gca().yaxis.set_major_formatter(dates2.DateFormatter('%M:%S'))
+    #plt.gca().yaxis.set_major_formatter(ticker.FuncFormatter(major_formatter))
+    #plt.gca().yaxis.set_major_formatter( mdates.DateFormatter('%Y-%m-%d'))
+
+
+    #plt.axis(dates)
+    #plt.axes()
+    #plt.set_formatter(dates.DateFormatter('%H:%M'))
+    filename = 'images/runner_'+id+'.png'
+    path = 'app/static/' + filename
+    plt.savefig(path)
+    plt.clf()
+    return url_for('static', filename=filename)
+
+
+# Func formatter
+def major_formatter(x, pos):
+    #time = datetime64
+    return type(x) #x.strftime('%M:%S')
