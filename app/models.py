@@ -1,4 +1,12 @@
 from app import db
+from app import login
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import UserMixin
+
+
+@login.user_loader
+def load_user(id):
+    return Runner.query.get(int(id))
 
 
 class TimeTrial(db.Model):
@@ -11,13 +19,30 @@ class TimeTrial(db.Model):
         return '{}'.format(self.date)
 
 
-class Runner(db.Model):
+class Runner(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50))
     first_name = db.Column(db.String(50))
     last_name = db.Column(db.String(50))
     gender = db.Column(db.String(2))
     active = db.Column(db.Integer)
+    level = db.Column(db.Integer)
+    password_hash = db.Column(db.String(128))
     results = db.relationship('TimeTrialResult', backref='runner', lazy='dynamic')
+
+    def is_admin(self):
+        # TODO fix
+        return self.is_authenticated and self.level >= 2
+
+    def is_sys_admin(self):
+        # TODO fix
+        return self.is_authenticated and self.level >= 3
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
     def get_pb(self):
         # result = TimeTrialResult.query.filter_by(runner_id=self.id).first()

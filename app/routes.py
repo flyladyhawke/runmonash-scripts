@@ -1,10 +1,14 @@
 from flask import render_template, url_for, flash, redirect, request
 from app import app, db
-from app.forms import AddTimeTrial, AddRunner, AddResult, LoadAttending, LoadResults
+from app.forms import AddTimeTrial, AddRunner, AddResult, LoadAttending, LoadResults, LoginForm
 from app.models import TimeTrial, Runner, TimeTrialResult
 from src.time_trial import TimeTrialSpreadsheet, TimeTrialUtils
 from werkzeug.utils import secure_filename
+from werkzeug.exceptions import HTTPException, Forbidden
+from flask_login import login_required, current_user, login_user, logout_user
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import matplotlib.ticker as ticker
 import numpy as numpy
 import os
 
@@ -13,15 +17,13 @@ import os
 @app.route('/index')
 def index():
     current = TimeTrial.query.all()
-    is_admin = request.args.get('is_admin', 0, type=int)
-    return render_template('index.html', title='Index', current=current, is_admin=is_admin)
+    return render_template('index.html', title='Index', current=current)
 
 
 @app.route('/time_trial', methods=['GET', 'POST'])
 def time_trial():
     form = AddTimeTrial()
     current = TimeTrial.query.all()
-    is_admin = request.args.get('is_admin', 0, type=int)
     if form.validate_on_submit():
         model = TimeTrial(
             date=form.date.data,
@@ -36,14 +38,13 @@ def time_trial():
         db.session.delete(tt)
         db.session.commit()
         current = TimeTrial.query.all()
-    return render_template('time_trial.html', title='Add', form=form, current=current, is_admin=is_admin)
+    return render_template('time_trial.html', title='Add', form=form, current=current)
 
 
 @app.route('/runner', methods=['GET', 'POST'])
 def runner():
     form = AddRunner()
     current = Runner.query.all()
-    is_admin = request.args.get('is_admin', 0, type=int)
     if form.validate_on_submit():
         model = Runner(
             first_name=form.first_name.data,
@@ -76,16 +77,14 @@ def runner():
         current=current,
         next_url=None,
         prev_url=None,
-        is_admin=is_admin
     )
-    return render_template('runner.html', title='Add', form=form, current=current, is_admin=is_admin)
+    return render_template('runner.html', title='Add', form=form, current=current)
 
 
 @app.route('/time_trial_result/<date>', methods=['GET', 'POST'])
 def time_trial_result(date):
     tt = TimeTrial.query.filter_by(date=date).first_or_404()
     form = AddResult()
-    is_admin = request.args.get('is_admin', 0, type=int)
     if form.validate_on_submit():
         model = TimeTrialResult(
             time_trial_id=form.time_trial_id.data.id,
@@ -112,15 +111,19 @@ def time_trial_result(date):
         results=results.items,
         next_url=next_url,
         prev_url=prev_url,
-        is_admin=is_admin
     )
+
+
+# Func formatter
+def major_formatter(x, pos):
+    #time = datetime64
+    return type(x) #x.strftime('%M:%S')
 
 
 @app.route('/runner_result/<id>', methods=['GET', 'POST'])
 def runner_result(id):
     runner = Runner.query.filter_by(id=id).first_or_404()
     form = AddResult()
-    is_admin = request.args.get('is_admin', 0, type=int)
     if form.validate_on_submit():
         model = TimeTrialResult(
             time_trial_id=form.time_trial_id.data.id,
@@ -136,8 +139,7 @@ def runner_result(id):
     page = request.args.get('page', 1, type=int)
     results = runner.results
 
-
-    results =results.order_by(TimeTrialResult.time_trial_id.asc()).paginate(
+    results = results.order_by(TimeTrialResult.time_trial_id.asc()).paginate(
         page, app.config['POSTS_PER_PAGE'], False)
     next_url = url_for('runner_result', id=runner.id, page=results.next_num) \
         if results.has_next else None
@@ -145,10 +147,23 @@ def runner_result(id):
         if results.has_prev else None
 
     times = [v.time for v in results.items]
+    time_trial_dates = [v.time_trial.date.strftime('%b %Y') for v in results.items]
     #for item in results:
     #    times.append(item/)
     #lnprice = numpy.log(times)
-    plt.plot(times)
+    # .strftime('%M:%S')
+    ax = plt.plot(time_trial_dates, times)
+    plt.xticks(rotation=30)
+    plt.xlabel('Time Trial')
+    plt.ylabel('Time')
+    #plt.gca().yaxis.set_major_formatter(dates2.DateFormatter('%M:%S'))
+    plt.gca().yaxis.set_major_formatter(ticker.FuncFormatter(major_formatter))
+    #plt.gca().yaxis.set_major_formatter( mdates.DateFormatter('%Y-%m-%d'))
+
+
+    #plt.axis(dates)
+    #plt.axes()
+    #plt.set_formatter(dates.DateFormatter('%H:%M'))
     filename = 'images/runner_'+id+'.png'
     path = 'app/static/' + filename
     plt.savefig(path)
@@ -161,23 +176,62 @@ def runner_result(id):
         results=results.items,
         next_url=next_url,
         prev_url=prev_url,
-        is_admin=is_admin,
         url=url,
+        data=times
     )
 
 
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = Runner.query.filter_by(username=form.username.data).first()
+        if user is None or not user.check_password(form.password.data):
+            flash('Invalid username or password')
+            return redirect(url_for('login'))
+        login_user(user, remember=form.remember_me.data)
+        return redirect(url_for('index'))
+    return render_template('auth/login.html', title='Sign In', form=form)
+
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+
+
 @app.route('/admin')
+@login_required
 def admin():
-    is_admin = request.args.get('is_admin', 0, type=int)
+    if not is_admin():
+        raise Forbidden
     return render_template(
         'admin/admin.html',
         title="Admin",
-        is_admin=is_admin
+    )
+
+
+@app.route('/delete_data')
+@login_required
+def delete_data():
+    if not is_sys_admin():
+        raise Forbidden
+    Runner.query.delete()
+    TimeTrial.query.delete()
+    TimeTrialResult.query.delete()
+    flash('Data Deleted')
+    return render_template(
+        'admin/admin.html',
+        title="Admin",
     )
 
 
 @app.route('/parse_spreadsheet', methods=['GET', 'POST'])
 def parse_spreadsheet():
+    if not is_sys_admin():
+        raise Forbidden
     form = LoadResults()
     response = ''
     if form.validate_on_submit():
@@ -196,10 +250,20 @@ def parse_spreadsheet():
         data_runners = sheet.get_runners_from()
         for k, v in data_runners.items():
             runner = Runner()
+            username = v['first_name']+'_'+v['last_name']
+            username = username.replace(' ', '_').lower()
+            level = 1
+            if username == 'tv_' or username == 'daniel_jitnah' :
+                level = 2
+            elif username == 'rosemary_waghorn':
+                level = 3
             runner.active = v['active']
+            runner.level = level
             runner.gender = v['gender']
             runner.first_name = v['first_name']
             runner.last_name = v['last_name']
+            runner.username = username
+            runner.set_password('test123')
             db.session.add(runner)
 
         data_trials = sheet.get_time_trials_from()
@@ -236,7 +300,10 @@ def parse_spreadsheet():
 
 
 @app.route('/parse_attending', methods=['GET', 'POST'])
+@login_required
 def parse_attending():
+    if not is_admin():
+        raise Forbidden
     form = LoadAttending()
     message = ''
     if form.validate_on_submit():
@@ -273,7 +340,10 @@ def parse_attending():
 
 
 @app.route('/printed_timesheet', methods=['GET', 'POST'])
+@login_required
 def create_printed_timesheet():
+    if not is_admin():
+        raise Forbidden
     form = LoadResults()
     response = ''
     if form.validate_on_submit():
@@ -297,8 +367,19 @@ def create_printed_timesheet():
 
 
 @app.route('/printed_result', methods=['GET', 'POST'])
+@login_required
 def create_printed_results():
+    if not is_admin():
+        raise Forbidden
     return render_template(
         'index.html',
         title="Print Results",
     )
+
+
+def is_admin():
+    return current_user.is_authenticated and current_user.level >= 2
+
+
+def is_sys_admin():
+    return current_user.is_authenticated and current_user.level >= 3

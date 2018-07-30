@@ -161,8 +161,6 @@ class TimeTrialSpreadsheet:
             path = 'Run Monash Time Trial.xlsm'
         self.wb = load_workbook(path)
         ws = self.wb['Names']
-        data = ws.values
-        data = list(data)
 
     def get_runners_from(self):
         self.runners = {}
@@ -191,8 +189,8 @@ class TimeTrialSpreadsheet:
             self.runners[i] = {
                 'active': active,
                 'gender': gender,
-                'first_name': names['first_name'],
-                'last_name': names['last_name'],
+                'first_name': names['first_name'].strip(),
+                'last_name': names['last_name'].strip(),
             }
         return self.runners
 

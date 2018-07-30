@@ -3,7 +3,10 @@
 {% block title %}
     {% if title %}Run Monash - {{ title }} - Time Trial{% else %}Run Monash - Time Trial{% endif %}
 {% endblock %}
-
+{% block styles %}
+    {{super()}}
+    <link rel="stylesheet" href="{{url_for('.static', filename='time_trial.css')}}">
+{% endblock %}
 {% block navbar %}
     <nav class="navbar navbar-default">
         <div class="container">
@@ -12,10 +15,18 @@
                     <li><a href="/index">Home</a></li>
                     <li><a href="{{ url_for('time_trial') }}">Time Trial</a></li>
                     <li><a href="{{ url_for('runner') }}">Runner</a></li>
-                    {% if is_admin %}
-                    <li><a href="{{ url_for('admin', is_admin=1) }}">Admin</a></li>
+                    {% if current_user.is_authenticated and current_user.level >= 2 %}
+                    <li><a href="{{ url_for('admin') }}">Admin</a></li>
                     {% endif %}
                  </ul>
+                 <ul class="nav navbar-nav navbar-right">
+                    {% if current_user.is_anonymous %}
+                    <li><a href="{{ url_for('login') }}">Login</a></li>
+                    {% else %}
+                    <li><a href="{{ url_for('runner_result', id=current_user.id) }}">Profile</a></li>
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                    {% endif %}
+                </ul>
             </div>
         </div>
     </div>
@@ -31,14 +42,7 @@
             {% endfor %}
         {% endif %}
         {% endwith %}
-        <h1 style="border-bottom-color: #CCCCCC;
-border-bottom-style: dotted;
-border-bottom-width: 1px;
-color: #222222;
-font-size: 18px;
-font-weight: bold;
-margin-bottom: 1em;
-padding-bottom: 0.25em;">Run Monash - Time Trial</h1>
+        <h1 class="page_title">Run Monash - Time Trial</h1>
         {# application content needs to be provided in the app_content block #}
         {% block app_content %}{% endblock %}
     </div>

@@ -19,7 +19,7 @@
             {{ item.comment }}
         </td>
         <td>
-            {% if is_admin == 1 %}
+            {% if current_user.is_authenticated and current_user.level >= 2 %}
              <a href="{{ url_for('runner', id=item.id, remove=True) }}"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a>
             {% endif %}
         </td>
