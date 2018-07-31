@@ -15,7 +15,31 @@
         <script type="text/javascript">
         $(document).ready( function () {
         {% for table in tables %}
-            $('#{{ table }}').DataTable();
+            // Setup - add a text input to each footer cell
+            $('#{{ table['name'] }} thead th').each( function (index, value) {
+                var title = $(this).text();
+                var searchable = $(this).attr('data-searchable');
+                if (!searchable) {
+                    $(this).html(title + '<br/><input size="15" type="text" placeholder="Search ' + title + '" />');
+                } else {
+                    $(this).html(title + '<br/><br/>');
+                }
+            } );
+            var {{ table['name'].replace('-','') }} = $('#{{ table['name'] }}').DataTable({stateSave: true});
+
+            // Apply the search
+            {{ table['name'].replace('-','') }} .columns().every( function () {
+                var that = this;
+
+                $( 'input', this.header() ).on( 'keyup change', function () {
+                    if ( that.search() !== this.value ) {
+                        that
+                            .search( this.value )
+                            .draw();
+                    }
+                } );
+            } );
+
         {% endfor %}
         } );
         </script>

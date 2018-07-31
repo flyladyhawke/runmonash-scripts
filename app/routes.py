@@ -38,7 +38,13 @@ def time_trial():
         db.session.delete(tt)
         db.session.commit()
         current = TimeTrial.query.all()
-    return render_template('time_trial.html', title='Add', form=form, current=current, tables=['time-trial-list'])
+    return render_template(
+        'time_trial.html',
+        title='Add',
+        form=form,
+        current=current,
+        tables=[{'name': 'time-trial-list'}]
+    )
 
 
 @app.route('/runner/update/<id>', methods=['GET', 'POST'])
@@ -100,7 +106,7 @@ def runner():
         form=form,
         runner=runner,
         current=current,
-        tables=['runner-list']
+        tables = [{'name': 'runner-list'}]
     )
 
 
@@ -126,7 +132,7 @@ def time_trial_result(date):
         form=form,
         time_trial=tt,
         results=results,
-        tables=['time-trial-results-list']
+        tables=[{'name': 'time-trial-results-list'}]
     )
 
 
@@ -168,7 +174,7 @@ def runner_result(id):
         form=form,
         runner=runner,
         results=results.items,
-        tables=['time-trial-results-list'],
+        tables=[{'name': 'time-trial-results-list'}],
         url=url,
     )
 
