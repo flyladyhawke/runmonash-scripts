@@ -11,8 +11,11 @@
     </div>
     <br/>
     {% endif %}
-    <table class="table">
+    <table id="time-trial-list" class="table">
+    <thead>
     <tr><th>Date</th><th>Description</th><th>Results</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
     {% for item in current %}
         <tr><td>{{ item.date }}</td><td>{{ item.description }}</td><td>{{ item.results.count() }}</td>
         <td>
@@ -22,5 +25,6 @@
             {% endif %}
         </td></tr>
     {% endfor %}
+    </tbody>
     </table>
 {% endblock %}

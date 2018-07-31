@@ -38,7 +38,7 @@ def time_trial():
         db.session.delete(tt)
         db.session.commit()
         current = TimeTrial.query.all()
-    return render_template('time_trial.html', title='Add', form=form, current=current)
+    return render_template('time_trial.html', title='Add', form=form, current=current, tables=['time-trial-list'])
 
 
 @app.route('/runner/update/<id>', methods=['GET', 'POST'])
@@ -94,24 +94,14 @@ def runner():
         db.session.delete(tt)
         db.session.commit()
         current = Runner.query.all()
-
-    # page = request.args.get('page', 1, type=int)
-    # results = current.results.paginate(
-    #     page, app.config['POSTS_PER_PAGE'], False)
-    # next_url = url_for('runner', page=results.next_num) \
-    #     if results.has_next else None
-    # prev_url = url_for('runner', page=results.prev_num) \
-    #     if results.has_prev else None
     return render_template(
         'runner.html',
         title='Runners',
         form=form,
         runner=runner,
         current=current,
-        next_url=None,
-        prev_url=None,
+        tables=['runner-list']
     )
-    return render_template('runner.html', title='Add', form=form, current=current)
 
 
 @app.route('/time_trial_result/<date>', methods=['GET', 'POST'])
@@ -130,20 +120,13 @@ def time_trial_result(date):
     elif request.method == 'GET':
         form.time_trial_id.data = tt
 
-    page = request.args.get('page', 1, type=int)
-    results = tt.results.order_by(TimeTrialResult.runner_id.asc()).paginate(
-        page, app.config['POSTS_PER_PAGE'], False)
-    next_url = url_for('time_trial_result', date=tt.date, page=results.next_num) \
-        if results.has_next else None
-    prev_url = url_for('time_trial_result', date=tt.date, page=results.prev_num) \
-        if results.has_prev else None
+    results = tt.results.order_by(TimeTrialResult.runner_id.asc())
     return render_template(
         'time_trial_results.html',
         form=form,
         time_trial=tt,
-        results=results.items,
-        next_url=next_url,
-        prev_url=prev_url,
+        results=results,
+        tables=['time-trial-results-list']
     )
 
 
@@ -178,24 +161,14 @@ def runner_result(id):
         elif request.method == 'GET':
             form.runner_id.data = runner
 
-    page = request.args.get('page', 1, type=int)
-    results = runner.results
-
-    results = results.order_by(TimeTrialResult.time_trial_id.asc()).paginate(
-        page, app.config['POSTS_PER_PAGE'], False)
-    next_url = url_for('runner_result', id=runner.id, page=results.next_num) \
-        if results.has_next else None
-    prev_url = url_for('runner_result', id=runner.id, page=results.prev_num) \
-        if results.has_prev else None
-
+    results = runner.results.order_by(TimeTrialResult.time_trial_id.asc())
     url = make_graph(id, results)
     return render_template(
         'runner_results.html',
         form=form,
         runner=runner,
         results=results.items,
-        next_url=next_url,
-        prev_url=prev_url,
+        tables=['time-trial-results-list'],
         url=url,
     )
 
