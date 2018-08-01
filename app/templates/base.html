@@ -20,7 +20,7 @@
                 var title = $(this).text();
                 var searchable = $(this).attr('data-searchable');
                 if (!searchable) {
-                    $(this).html(title + '<br/><input size="15" type="text" placeholder="Search ' + title + '" />');
+                    $(this).html(title + '<br/><input size="10" type="text" placeholder="Search" />');
                 } else {
                     $(this).html(title + '<br/><br/>');
                 }

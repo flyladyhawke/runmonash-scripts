@@ -173,7 +173,7 @@ def runner_result(id):
         'runner_results.html',
         form=form,
         runner=runner,
-        results=results.items,
+        results=results,
         tables=[{'name': 'time-trial-results-list'}],
         url=url,
     )
@@ -227,6 +227,7 @@ def delete_data():
 
 
 @app.route('/parse_spreadsheet', methods=['GET', 'POST'])
+@login_required
 def parse_spreadsheet():
     if not is_sys_admin():
         raise Forbidden
@@ -384,8 +385,8 @@ def is_sys_admin():
 
 
 def make_graph(id, results):
-    times = [v.time for v in results.items]
-    time_trial_dates = [v.time_trial.date.strftime('%b %Y') for v in results.items]
+    times = [v.time for v in results]
+    time_trial_dates = [v.time_trial.date.strftime('%b %Y') for v in results]
     #for item in results:
     #    times.append(item/)
     #lnprice = numpy.log(times)
