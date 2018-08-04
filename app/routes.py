@@ -1,6 +1,6 @@
 from flask import render_template, url_for, flash, redirect, request
 from app import app, db
-from app.forms import AddTimeTrial, AddRunner, AddResult, LoadAttending, LoadResults, LoginForm
+from app.forms import TimeTrialForm, RunnerForm, TimeTrialResultForm, LoadAttending, LoadResults, LoginForm
 from app.models import TimeTrial, Runner, TimeTrialResult
 from src.time_trial import TimeTrialSpreadsheet, TimeTrialUtils
 from werkzeug.utils import secure_filename
@@ -22,25 +22,22 @@ def index():
 
 @app.route('/time_trial', methods=['GET', 'POST'])
 def time_trial():
-    form = AddTimeTrial()
-    current = TimeTrial.query.all()
+    form = TimeTrialForm()
     if form.validate_on_submit():
-        model = TimeTrial(
-            date=form.date.data,
-            description=form.description.data
-        )
+        model = TimeTrial()
+        form.populate_obj(model)
         db.session.add(model)
         db.session.commit()
         flash('Your changes have been saved.')
-        return redirect(url_for('time_trial'))
     elif request.args.get('remove'):
         tt = TimeTrial.query.filter_by(date=request.args.get('date')).first_or_404()
         db.session.delete(tt)
         db.session.commit()
-        current = TimeTrial.query.all()
+
+    current = TimeTrial.query.all()
     return render_template(
         'time_trial.html',
-        title='Add',
+        title='Time Trial List',
         form=form,
         current=current,
         tables=[{'name': 'time-trial-list'}]
@@ -49,48 +46,41 @@ def time_trial():
 
 @app.route('/runner/update/<id>', methods=['GET', 'POST'])
 def runner_update(id):
-    current = Runner.query.all()
-    tt = Runner.query.filter_by(id=id).first_or_404()
-    form = AddRunner()
-    form.populate_obj(tt)
+    current_model = Runner.query.filter_by(id=id).first_or_404()
+    form = RunnerForm()
+    form.populate_obj(current_model)
     if form.validate_on_submit():
-        tt.first_name=form.first_name.data
-        tt.last_name=form.last_name.data
-        tt.gender=form.gender.data
-        tt.active=form.active.data
+        form.populate_obj(current_model)
         db.session.commit()
         flash('Your changes have been saved.')
-        return redirect(url_for('runner_result', id=id))
+        # return redirect(url_for('runner_result', id=id))
+
+    current = Runner.query.all()
     return render_template(
-        'runner.html',
+        'runner_results.html',
         title='Runners',
         form=form,
-        runner=runner,
+        runner=current_model,
         current=current,
-        next_url=None,
-        prev_url=None,
     )
 
 
 @app.route('/runner/delete/<id>', methods=['GET', 'POST'])
 def runner_delete(id):
-    tt = Runner.query.filter_by(id=request.args.get('id')).first_or_404()
-    db.session.delete(tt)
+    current_model = Runner.query.filter_by(id=request.args.get('id')).first_or_404()
+    db.session.delete(current_model)
     db.session.commit()
+    flash('Your changes have been saved.')
     return redirect(url_for('runner'))
 
 
 @app.route('/runner', methods=['GET', 'POST'])
 def runner():
-    form = AddRunner()
+    form = RunnerForm('update')
     current = Runner.query.all()
     if form.validate_on_submit():
-        model = Runner(
-            first_name=form.first_name.data,
-            last_name=form.last_name.data,
-            gender=form.gender.data,
-            active=form.active.data
-        )
+        model = Runner()
+        form.populate_obj(model)
         db.session.add(model)
         db.session.commit()
         flash('Your changes have been saved.')
@@ -104,7 +94,6 @@ def runner():
         'runner.html',
         title='Runners',
         form=form,
-        runner=runner,
         current=current,
         tables = [{'name': 'runner-list'}]
     )
@@ -112,37 +101,33 @@ def runner():
 
 @app.route('/time_trial_result/<date>', methods=['GET', 'POST'])
 def time_trial_result(date):
-    tt = TimeTrial.query.filter_by(date=date).first_or_404()
-    form = AddResult()
+    current_model = TimeTrial.query.filter_by(date=date).first_or_404()
+    form = TimeTrialResultForm()
     if form.validate_on_submit():
-        model = TimeTrialResult(
-            time_trial_id=form.time_trial_id.data.id,
-            runner_id=form.runner_id.data.id,
-            time=form.time.data,
-            comment=form.comment.data
-        )
+        model = TimeTrialResult()
+        form.populate_obj(model)
         db.session.add(model)
         db.session.commit()
     elif request.method == 'GET':
-        form.time_trial_id.data = tt
+        form.time_trial_id.data = current_model
 
-    results = tt.results.order_by(TimeTrialResult.runner_id.asc())
+    results = current_model.results.order_by(TimeTrialResult.runner_id.asc())
     return render_template(
         'time_trial_results.html',
         form=form,
-        time_trial=tt,
+        time_trial=current_model,
         results=results,
         tables=[{'name': 'time-trial-results-list'}]
     )
 
 
-@app.route('/runner_result/<id>', methods=['GET', 'POST'])
+@app.route('/runner/view/<id>', methods=['GET', 'POST'])
 def runner_result(id):
-    runner = Runner.query.filter_by(id=id).first_or_404()
+    current_model = Runner.query.filter_by(id=id).first_or_404()
     if current_user.is_authenticated and current_user.id == runner.id:
-        form = AddRunner()
-        form.populate_obj(runner)
-        form.first_name = runner.first_name
+        form = RunnerForm()
+        form.populate_obj(current_model)
+        # form.first_name = runner.first_name
         # form.first_name = runner.first_name
         # if form.validate_on_submit():
         #     runner.first_name=form.first_name.data,
@@ -154,14 +139,10 @@ def runner_result(id):
         #     form.populate_obj(runner)
         #     form.first_name = runner.first_name
     else:
-        form = AddResult()
+        form = TimeTrialResultForm()
         if form.validate_on_submit():
-            model = TimeTrialResult(
-                time_trial_id=form.time_trial_id.data.id,
-                runner_id=form.runner_id.data.id,
-                time=form.time.data,
-                comment=form.comment.data
-            )
+            model = TimeTrialResult()
+            form.populate_obj(model)
             db.session.add(model)
             db.session.commit()
         elif request.method == 'GET':
@@ -172,7 +153,7 @@ def runner_result(id):
     return render_template(
         'runner_results.html',
         form=form,
-        runner=runner,
+        runner=current_model,
         results=results,
         tables=[{'name': 'time-trial-results-list'}],
         url=url,
@@ -311,16 +292,16 @@ def parse_attending():
         path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         f.save(path)
 
-        for runner in Runner.query.all():
-            runner.active = 0
+        for item in Runner.query.all():
+            item.active = 0
         db.session.commit()
 
         names = TimeTrialUtils.make_active(path)
         missing = []
         for v in names:
-            runner = Runner.query.filter_by(first_name=v['first_name'],last_name=v['last_name']).first()
-            if runner:
-                runner.active = 0
+            item = Runner.query.filter_by(first_name=v['first_name'],last_name=v['last_name']).first()
+            if item:
+                item.active = 0
             else:
                 missing.append(v)
         db.session.commit()

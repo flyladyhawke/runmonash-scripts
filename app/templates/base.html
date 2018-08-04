@@ -20,7 +20,7 @@
                 var title = $(this).text();
                 var searchable = $(this).attr('data-searchable');
                 if (!searchable) {
-                    $(this).html(title + '<br/><input size="10" type="text" placeholder="Search" />');
+                    $(this).html(title + '<br/><input size="6" type="text" placeholder="Search" />');
                 } else {
                     $(this).html(title + '<br/><br/>');
                 }
@@ -61,7 +61,7 @@
                     {% if current_user.is_anonymous %}
                     <li><a href="{{ url_for('login') }}">Login</a></li>
                     {% else %}
-                    <li><a href="{{ url_for('runner_result', id=current_user.id) }}">Profile</a></li>
+                    <li><a href="{{ url_for('runner_result', id=current_user.id) }}">{{ current_user }} Profile</a></li>
                     <li><a href="{{ url_for('logout') }}">Logout</a></li>
                     {% endif %}
                 </ul>
