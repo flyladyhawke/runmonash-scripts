@@ -1,11 +1,12 @@
-from flask import render_template, url_for, flash, redirect, request
+from flask import render_template, url_for, flash, redirect, request, send_file
 from app import app, db
-from app.forms import TimeTrialForm, RunnerForm, TimeTrialResultForm, LoadAttending, LoadResults, LoginForm
+from app.forms import TimeTrialForm, RunnerForm, TimeTrialResultForm, LoadAttending, LoadResults, LoginForm, PrintTimeTrial
 from app.models import TimeTrial, Runner, TimeTrialResult
 from src.time_trial import TimeTrialSpreadsheet, TimeTrialUtils
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import HTTPException, Forbidden
 from flask_login import login_required, current_user, login_user, logout_user
+from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.ticker as ticker
@@ -44,30 +45,56 @@ def time_trial():
     )
 
 
-@app.route('/runner/update/<id>', methods=['GET', 'POST'])
-def runner_update(id):
-    current_model = Runner.query.filter_by(id=id).first_or_404()
-    form = RunnerForm()
-    form.populate_obj(current_model)
-    if form.validate_on_submit():
-        form.populate_obj(current_model)
-        db.session.commit()
-        flash('Your changes have been saved.')
-        # return redirect(url_for('runner_result', id=id))
+@app.route('/runner/update/<username>', methods=['GET', 'POST'])
+def runner_update(username):
+    current_model = Runner.query.filter_by(username=username).first_or_404()
+    results = current_model.results.order_by(TimeTrialResult.time_trial_id.asc())
+    forms = {}
+    if is_sys_admin or (current_user.is_authenticated and current_user.id == current_model.id):
+        form_update = RunnerForm(obj=current_model)
+        form_update.submit.label.text = 'Update'
+        if form_update.validate_on_submit():
+            form_update.populate_obj(current_model)
+            db.session.commit()
+            flash('Your changes have been saved.')
+        forms['Update Runner'] = form_update
+    # if is_admin:
+    #     form_add_result = TimeTrialResultForm()
+    #     if form_add_result.validate_on_submit():
+    #         model = TimeTrialResult()
+    #         form_add_result.populate_obj(model)
+    #         db.session.add(model)
+    #         db.session.commit()
+    #         flash('Your changes have been saved.')
+    #     forms['Add Runner Result'] = form_add_result
 
-    current = Runner.query.all()
     return render_template(
         'runner_results.html',
-        title='Runners',
-        form=form,
+        title='Update Runner',
+        forms=forms.items(),
         runner=current_model,
-        current=current,
+        results=results,
+        tables=[{'name': 'time-trial-results-list'}],
     )
 
 
-@app.route('/runner/delete/<id>', methods=['GET', 'POST'])
-def runner_delete(id):
-    current_model = Runner.query.filter_by(id=request.args.get('id')).first_or_404()
+@app.route('/runner/view/<username>', methods=['GET', 'POST'])
+def runner_result(username):
+    current_model = Runner.query.filter_by(username=username).first_or_404()
+    results = current_model.results.order_by(TimeTrialResult.time_trial_id.asc())
+    url = make_graph(username, results)
+    return render_template(
+        'runner_results.html',
+        runner=current_model,
+        results=results,
+        tables=[{'name': 'time-trial-results-list'}],
+        url=url,
+    )
+
+
+@app.route('/runner/delete/<username>', methods=['GET', 'POST'])
+def runner_delete(username):
+    current_model = Runner.query.filter_by(username=username).first_or_404()
     db.session.delete(current_model)
     db.session.commit()
     flash('Your changes have been saved.')
@@ -76,17 +103,20 @@ def runner_delete(id):
 
 @app.route('/runner', methods=['GET', 'POST'])
 def runner():
-    form = RunnerForm('update')
+    form = RunnerForm()
     current = Runner.query.all()
     if form.validate_on_submit():
         model = Runner()
         form.populate_obj(model)
+        username = model.first_name + '_' + model.last_name
+        model.username = username.replace(' ', '_').lower()
+        model.level = 1
         db.session.add(model)
         db.session.commit()
         flash('Your changes have been saved.')
         return redirect(url_for('runner'))
     elif request.args.get('remove'):
-        tt = Runner.query.filter_by(id=request.args.get('id')).first_or_404()
+        tt = Runner.query.filter_by(username=request.args.get('username')).first_or_404()
         db.session.delete(tt)
         db.session.commit()
         current = Runner.query.all()
@@ -106,6 +136,9 @@ def time_trial_result(date):
     if form.validate_on_submit():
         model = TimeTrialResult()
         form.populate_obj(model)
+        # TODO work out why foreign keys need to be done like this.
+        model.time_trial_id = model.time_trial_id.id
+        model.runner_id = model.runner_id.id
         db.session.add(model)
         db.session.commit()
     elif request.method == 'GET':
@@ -118,45 +151,6 @@ def time_trial_result(date):
         time_trial=current_model,
         results=results,
         tables=[{'name': 'time-trial-results-list'}]
-    )
-
-
-@app.route('/runner/view/<id>', methods=['GET', 'POST'])
-def runner_result(id):
-    current_model = Runner.query.filter_by(id=id).first_or_404()
-    if current_user.is_authenticated and current_user.id == runner.id:
-        form = RunnerForm()
-        form.populate_obj(current_model)
-        # form.first_name = runner.first_name
-        # form.first_name = runner.first_name
-        # if form.validate_on_submit():
-        #     runner.first_name=form.first_name.data,
-        #     runner.last_name=form.last_name.data,
-        #     runner.gender=form.gender.data,
-        #     runner.active=form.active.data
-        #     # db.session.commit()
-        # elif request.method == 'GET':
-        #     form.populate_obj(runner)
-        #     form.first_name = runner.first_name
-    else:
-        form = TimeTrialResultForm()
-        if form.validate_on_submit():
-            model = TimeTrialResult()
-            form.populate_obj(model)
-            db.session.add(model)
-            db.session.commit()
-        elif request.method == 'GET':
-            form.runner_id.data = runner
-
-    results = runner.results.order_by(TimeTrialResult.time_trial_id.asc())
-    url = make_graph(id, results)
-    return render_template(
-        'runner_results.html',
-        form=form,
-        runner=current_model,
-        results=results,
-        tables=[{'name': 'time-trial-results-list'}],
-        url=url,
     )
 
 
@@ -197,6 +191,7 @@ def admin():
 def delete_data():
     if not is_sys_admin():
         raise Forbidden
+    # TODO delete all except admins
     Runner.query.delete()
     TimeTrial.query.delete()
     TimeTrialResult.query.delete()
@@ -229,7 +224,7 @@ def parse_spreadsheet():
 
         data_runners = sheet.get_runners_from()
         for k, v in data_runners.items():
-            runner = Runner()
+            current_runner = Runner()
             username = v['first_name']+'_'+v['last_name']
             username = username.replace(' ', '_').lower()
             level = 1
@@ -237,33 +232,33 @@ def parse_spreadsheet():
                 level = 2
             elif username == 'rosemary_waghorn':
                 level = 3
-            runner.active = v['active']
-            runner.level = level
-            runner.gender = v['gender']
-            runner.first_name = v['first_name']
-            runner.last_name = v['last_name']
-            runner.username = username
-            runner.set_password('test123')
-            db.session.add(runner)
+            current_runner.active = v['active']
+            current_runner.level = level
+            current_runner.gender = v['gender']
+            current_runner.first_name = v['first_name']
+            current_runner.last_name = v['last_name']
+            current_runner.username = username
+            current_runner.set_password('test123')
+            db.session.add(current_runner)
 
         data_trials = sheet.get_time_trials_from()
         for k, v in data_trials.items():
-            trial = TimeTrial()
-            trial.date = v['date']
-            db.session.add(trial)
+            current_time_trial = TimeTrial()
+            current_time_trial.date = v['date']
+            db.session.add(current_time_trial)
         db.session.commit()
 
         results = sheet.get_time_trials_results_from()
         errors = []
         for v in results:
-            runner = Runner.query.filter_by(first_name=v['first_name'],last_name=v['last_name']).first()
-            time_trial = TimeTrial.query.filter_by(date=v['time_trial_date'].date()).first()
+            current_runner = Runner.query.filter_by(first_name=v['first_name'],last_name=v['last_name']).first()
+            current_time_trial = TimeTrial.query.filter_by(date=v['time_trial_date'].date()).first()
 
-            trial = TimeTrialResult()
-            trial.runner_id = runner.id
-            trial.time_trial_id = time_trial.id
-            trial.time = v['time']
-            db.session.add(trial)
+            result = TimeTrialResult()
+            result.runner_id = current_runner.id
+            result.time_trial_id = current_time_trial.id
+            result.time = v['time']
+            db.session.add(result)
         db.session.commit()
 
         response = str(len(data_runners)) + " runner records added, " \
@@ -324,25 +319,30 @@ def parse_attending():
 def create_printed_timesheet():
     if not is_admin():
         raise Forbidden
-    form = LoadResults()
-    response = ''
+    form = PrintTimeTrial()
     if form.validate_on_submit():
-        f = form.attending.data
-        path = False
-        if f:
-            filename = secure_filename(f.filename)
-            path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            f.save(path)
+        sheet = TimeTrialSpreadsheet(False)
+        current_time_trial = form.time_trial_id.data
+        date = current_time_trial.date.strftime('%Y_%m_%d')
+        print(date)
+        filename = 'time_trial_'+date+'.xlsx'
+        path = 'app/static/time_trials/' + filename
+        path_read = 'static/time_trials/' + filename
+        active_runners = [str(k) for k in Runner.query.filter_by(active=1)]
 
-        sheet = TimeTrialSpreadsheet(path)
-        active_runners = Runner.query.filter_by(active=1)
-        template = sheet.get_template_for(active_runners)
+        template = sheet.get_template_from(active_runners, current_time_trial.date, path)
+
+        return send_file(
+            path_read,
+            mimetype='application/vnd.ms-excel',
+            as_attachment=True,
+            attachment_filename=filename
+        )
 
     return render_template(
-        'admin/spreadsheet.html',
+        'admin/print_timesheet.html',
         title="Print TimeSheet",
         form=form,
-        message=response
     )
 
 
@@ -365,7 +365,7 @@ def is_sys_admin():
     return current_user.is_authenticated and current_user.level >= 3
 
 
-def make_graph(id, results):
+def make_graph(username, results):
     times = [v.time for v in results]
     time_trial_dates = [v.time_trial.date.strftime('%b %Y') for v in results]
     #for item in results:
@@ -384,7 +384,7 @@ def make_graph(id, results):
     #plt.axis(dates)
     #plt.axes()
     #plt.set_formatter(dates.DateFormatter('%H:%M'))
-    filename = 'images/runner_'+id+'.png'
+    filename = 'images/runner_'+username+'.png'
     path = 'app/static/' + filename
     plt.savefig(path)
     plt.clf()

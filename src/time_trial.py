@@ -216,8 +216,12 @@ class TimeTrialSpreadsheet:
 
         return self.time_trials
 
-    def get_template_from(self, names):
+    def get_template_from(self, names, date, path):
         ws = self.wb['Template']
+        target = self.wb.copy_worksheet(ws)
+        count = len(names)
+        self.wb.save(path)
+
 
     def get_time_trials_results_from(self):
         time_trial_results = []
