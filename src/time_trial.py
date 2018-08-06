@@ -1,6 +1,8 @@
 from math import floor, ceil
 from jinja2 import Environment, FileSystemLoader
 from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
+from openpyxl.styles import Font
 from datetime import datetime
 import pandas as pd
 import numpy as np
@@ -138,15 +140,22 @@ class TimeTrialUtils:
     def make_active(filename):
         wb = load_workbook(filename)
         ws = wb['Sheet1']
-        data = ws.values
-        data = list(data)
+        #data = ws.values
+        #data = list(data)
         names = []
         for i in range(2, ws.max_row):
             for j in range(1, ws.max_column):
-                name = data[i][j]
+                cell = get_column_letter(j)+str(i)
+                name = ws[cell].value
                 if name == '' or name is None:
                     continue
                 names.append(TimeTrialUtils.get_names(name))
+        #for i in range(2, ws.max_row):
+        #    for j in range(1, ws.max_column):
+        #        name = data[j][i]
+        #        if name == '' or name is None:
+        #            continue
+        #        names.append(TimeTrialUtils.get_names(name))
         return names
 
 
@@ -218,10 +227,38 @@ class TimeTrialSpreadsheet:
 
     def get_template_from(self, names, date, path):
         ws = self.wb['Template']
-        target = self.wb.copy_worksheet(ws)
-        count = len(names)
-        self.wb.save(path)
 
+        sheets = ['Names', 'Template2', 'Chart', 'Attendance', 'formulas']
+        for sheet in sheets:
+            std = self.wb[sheet]
+            self.wb.remove(std)
+
+        total_count = len(names)
+        cols = 38
+        section = 1 + total_count // cols
+        pages = 1 + total_count // (cols * 2)
+
+        title = 'TIME TRIAL - '+date.strftime('%A, %B %d, %Y')
+        for i in range(1, (pages+1)*6, 6):
+            cell = get_column_letter(i)+'1'
+            ws[cell] = title
+
+        count = 0
+        for j in range(1, section * 3, 3):
+            if count >= total_count:
+                break
+            for i in range(3, 41):
+                if count >= total_count:
+                    break
+                cell = get_column_letter(j)+str(i)
+                ws[cell] = names[count][0]
+                ws[cell].font = Font(size=12)
+                cell = get_column_letter(j+1)+str(i)
+                ws[cell] = names[count][1]
+                ws[cell].font = Font(size=12)
+                count += 1
+
+        self.wb.save(path)
 
     def get_time_trials_results_from(self):
         time_trial_results = []

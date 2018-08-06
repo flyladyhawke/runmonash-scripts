@@ -6,7 +6,6 @@ from src.time_trial import TimeTrialSpreadsheet, TimeTrialUtils
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import HTTPException, Forbidden
 from flask_login import login_required, current_user, login_user, logout_user
-from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.ticker as ticker
@@ -203,7 +202,6 @@ def delete_data():
 
 
 @app.route('/parse_spreadsheet', methods=['GET', 'POST'])
-@login_required
 def parse_spreadsheet():
     if not is_sys_admin():
         raise Forbidden
@@ -296,7 +294,7 @@ def parse_attending():
         for v in names:
             item = Runner.query.filter_by(first_name=v['first_name'],last_name=v['last_name']).first()
             if item:
-                item.active = 0
+                item.active = 1
             else:
                 missing.append(v)
         db.session.commit()
@@ -324,11 +322,10 @@ def create_printed_timesheet():
         sheet = TimeTrialSpreadsheet(False)
         current_time_trial = form.time_trial_id.data
         date = current_time_trial.date.strftime('%Y_%m_%d')
-        print(date)
         filename = 'time_trial_'+date+'.xlsx'
         path = 'app/static/time_trials/' + filename
         path_read = 'static/time_trials/' + filename
-        active_runners = [str(k) for k in Runner.query.filter_by(active=1)]
+        active_runners = [[str(k), k.get_pb()] for k in Runner.query.filter_by(active=1)]
 
         template = sheet.get_template_from(active_runners, current_time_trial.date, path)
 
