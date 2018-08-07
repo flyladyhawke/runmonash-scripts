@@ -202,6 +202,7 @@ def delete_data():
 
 
 @app.route('/parse_spreadsheet', methods=['GET', 'POST'])
+@login_required
 def parse_spreadsheet():
     if not is_sys_admin():
         raise Forbidden
@@ -325,7 +326,7 @@ def create_printed_timesheet():
         filename = 'time_trial_'+date+'.xlsx'
         path = 'app/static/time_trials/' + filename
         path_read = 'static/time_trials/' + filename
-        active_runners = [[str(k), k.get_pb()] for k in Runner.query.filter_by(active=1)]
+        active_runners = [[str(k), k.get_pb()] for k in Runner.query.order_by(Runner.first_name.asc()).filter_by(active=1)]
 
         template = sheet.get_template_from(active_runners, current_time_trial.date, path)
 
