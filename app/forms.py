@@ -36,7 +36,7 @@ class TimeTrialResultForm(FlaskForm):
     runner_id = QuerySelectField(
         'Runner',
         validators=[DataRequired()],
-        query_factory=lambda: Runner.query.order_by(Runner.first_name.asc()).all()
+        query_factory=lambda: Runner.query.order_by(Runner.first_name.asc()).all() #filter_by(active=1)
     )
     time = TimeField('Time', format='%M:%S')
     comment = StringField('Comment')

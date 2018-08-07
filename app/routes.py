@@ -103,6 +103,8 @@ def runner_delete(username):
 @app.route('/runner', methods=['GET', 'POST'])
 def runner():
     form = RunnerForm()
+    form.active.data = 1
+    form.gender.data = 'O'
     current = Runner.query.all()
     if form.validate_on_submit():
         model = Runner()
@@ -114,11 +116,6 @@ def runner():
         db.session.commit()
         flash('Your changes have been saved.')
         return redirect(url_for('runner'))
-    elif request.args.get('remove'):
-        tt = Runner.query.filter_by(username=request.args.get('username')).first_or_404()
-        db.session.delete(tt)
-        db.session.commit()
-        current = Runner.query.all()
     return render_template(
         'runner.html',
         title='Runners',
@@ -143,7 +140,8 @@ def time_trial_result(date):
     elif request.method == 'GET':
         form.time_trial_id.data = current_model
 
-    results = current_model.results.order_by(TimeTrialResult.runner_id.asc())
+    results = current_model.results.join(TimeTrialResult.runner).order_by(Runner.first_name.asc())
+
     return render_template(
         'time_trial_results.html',
         form=form,
@@ -326,7 +324,10 @@ def create_printed_timesheet():
         filename = 'time_trial_'+date+'.xlsx'
         path = 'app/static/time_trials/' + filename
         path_read = 'static/time_trials/' + filename
-        active_runners = [[str(k), k.get_pb()] for k in Runner.query.order_by(Runner.first_name.asc()).filter_by(active=1)]
+        active_runners = [
+            [str(k), k.get_pb()]
+            for k in Runner.query.order_by(Runner.first_name.asc()).filter_by(active=1)
+        ]
 
         template = sheet.get_template_from(active_runners, current_time_trial.date, path)
 
@@ -344,14 +345,35 @@ def create_printed_timesheet():
     )
 
 
-@app.route('/printed_result', methods=['GET', 'POST'])
+@app.route('/export_results', methods=['GET', 'POST'])
 @login_required
-def create_printed_results():
+def export_results():
     if not is_admin():
         raise Forbidden
+    form = PrintTimeTrial()
+    if form.validate_on_submit():
+        sheet = TimeTrialSpreadsheet(False)
+        current_time_trial = form.time_trial_id.data
+        date = current_time_trial.date.strftime('%Y_%m_%d')
+        filename = 'time_trial_results_'+date+'.xlsx'
+        path = 'app/static/time_trials/' + filename
+        path_read = 'static/time_trials/' + filename
+        results = [
+            [str(k.runner), k.runner.get_latest_result(), k.runner.get_pb(), k.get_is_pb(), k.get_is_first_time()]
+            for k in current_time_trial.results
+        ]
+        sheet.export(results, current_time_trial.date, path)
+
+        return send_file(
+            path_read,
+            mimetype='application/vnd.ms-excel',
+            as_attachment=True,
+            attachment_filename=filename
+        )
     return render_template(
-        'index.html',
-        title="Print Results",
+        'admin/export_results.html',
+        title="Export Results",
+        form=form,
     )
 
 

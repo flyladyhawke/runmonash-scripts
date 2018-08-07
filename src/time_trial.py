@@ -1,6 +1,6 @@
 from math import floor, ceil
 from jinja2 import Environment, FileSystemLoader
-from openpyxl import load_workbook
+from openpyxl import load_workbook, Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font
 from datetime import datetime
@@ -224,6 +224,19 @@ class TimeTrialSpreadsheet:
             self.time_trials[i] = {'date': trial_date}
 
         return self.time_trials
+
+    def export(self, names, date, path):
+        wb = Workbook()
+        ws = wb.active
+        count = 1
+        for name in names:
+            ws['A' + str(count)] = names[count - 1][0]
+            ws['B' + str(count)] = names[count - 1][1]
+            ws['C' + str(count)] = names[count - 1][2]
+            ws['D' + str(count)] = names[count - 1][3]
+            ws['E' + str(count)] = names[count - 1][4]
+            count += 1
+        wb.save(path)
 
     def get_template_from(self, names, date, path):
         ws = self.wb['Template']
