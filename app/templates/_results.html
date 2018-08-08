@@ -10,9 +10,9 @@
     <tbody>
     {% for item in results %}
     <tr>
-        <td>
+        <td data-order="{{ item.time_trial.date }}">
             <a href="{{ url_for('time_trial_result', date=item.time_trial.date) }}">
-                {{ item.time_trial.date }}
+                {{ item.time_trial.date.strftime("%d/%m/%Y") }}
             </a>
         </td>
         <td>
@@ -24,7 +24,9 @@
             {{ item.time.strftime('%M:%S') }}
         </td>
         <td>
+            {% if item.comment %}
             {{ item.comment }}
+            {% endif %}
         </td>
         {% if current_user.is_authenticated and current_user.level >= 2 %}
             <td>

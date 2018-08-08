@@ -35,12 +35,17 @@ def time_trial():
         db.session.commit()
 
     current = TimeTrial.query.all()
+    breadcrumbs = [
+        {'link': url_for('index'), 'text': 'Home', 'visible': True},
+        {'text': 'Time Trials'}
+    ]
     return render_template(
         'time_trial.html',
         title='Time Trial List',
         form=form,
         current=current,
-        tables=[{'name': 'time-trial-list'}]
+        tables=[{'name': 'time-trial-list'}],
+        breadcrumbs=breadcrumbs,
     )
 
 
@@ -59,14 +64,24 @@ def runner_update(username):
         forms['Update Runner'] = form_update
     # if is_admin:
     #     form_add_result = TimeTrialResultForm()
-    #     if form_add_result.validate_on_submit():
+    #     if form_add_result.time.data and form_add_result.validate_on_submit():
     #         model = TimeTrialResult()
     #         form_add_result.populate_obj(model)
+    #         # TODO work out why foreign keys need to be done like this.
+    #         model.time_trial_id = model.time_trial_id.id
+    #         model.runner_id = model.runner_id.id
     #         db.session.add(model)
     #         db.session.commit()
-    #         flash('Your changes have been saved.')
+    #         flash('Your result has been added.')
+    #     elif request.method == 'GET':
+    #         form_add_result.runner_id.data = current_model
     #     forms['Add Runner Result'] = form_add_result
-
+        breadcrumbs = [
+        {'link': url_for('index'), 'text': 'Home', 'visible': True},
+        {'link': url_for('runner'), 'text': 'Runners', 'visible': True},
+        {'link': url_for('runner_result', username=username), 'text': 'View: '+str(current_model), 'visible': True},
+        {'text': 'Update: '+str(current_model)}
+    ]
     return render_template(
         'runner_results.html',
         title='Update Runner',
@@ -74,6 +89,7 @@ def runner_update(username):
         runner=current_model,
         results=results,
         tables=[{'name': 'time-trial-results-list'}],
+        breadcrumbs=breadcrumbs,
     )
 
 
@@ -82,12 +98,21 @@ def runner_result(username):
     current_model = Runner.query.filter_by(username=username).first_or_404()
     results = current_model.results.order_by(TimeTrialResult.time_trial_id.asc())
     url = make_graph(username, results)
+    visible = current_user.is_authenticated and (current_user.level >= 2 or current_user.id == current_model.id)
+    breadcrumbs = [
+        {'link': url_for('index'), 'text': 'Home', 'visible': True},
+        {'link': url_for('runner'), 'text': 'Runners', 'visible': True},
+        {'link': url_for('runner_update', username=username), 'text': 'Update: '+str(current_model), 'visible': visible},
+        {'text': 'View: '+str(current_model)}
+    ]
     return render_template(
         'runner_results.html',
+        title='View Runner',
         runner=current_model,
         results=results,
         tables=[{'name': 'time-trial-results-list'}],
         url=url,
+        breadcrumbs=breadcrumbs,
     )
 
 
@@ -116,16 +141,22 @@ def runner():
         db.session.commit()
         flash('Your changes have been saved.')
         return redirect(url_for('runner'))
+
+    breadcrumbs = [
+        {'link': url_for('index'), 'text': 'Home', 'visible': True},
+        {'text': 'Runners'}
+    ]
     return render_template(
         'runner.html',
         title='Runners',
         form=form,
         current=current,
-        tables = [{'name': 'runner-list'}]
+        tables = [{'name': 'runner-list'}],
+        breadcrumbs=breadcrumbs,
     )
 
 
-@app.route('/time_trial_result/<date>', methods=['GET', 'POST'])
+@app.route('/time_trial/view/<date>', methods=['GET', 'POST'])
 def time_trial_result(date):
     current_model = TimeTrial.query.filter_by(date=date).first_or_404()
     form = TimeTrialResultForm()
@@ -141,13 +172,18 @@ def time_trial_result(date):
         form.time_trial_id.data = current_model
 
     results = current_model.results.join(TimeTrialResult.runner).order_by(Runner.first_name.asc())
-
+    breadcrumbs = [
+        {'link': url_for('index'), 'text': 'Home', 'visible': True},
+        {'link': url_for('time_trial'), 'text': 'Time Trials', 'visible': True},
+        {'text': 'View Time Trial: '+str(current_model)}
+    ]
     return render_template(
         'time_trial_results.html',
         form=form,
         time_trial=current_model,
         results=results,
-        tables=[{'name': 'time-trial-results-list'}]
+        tables=[{'name': 'time-trial-results-list'}],
+        breadcrumbs=breadcrumbs,
     )
 
 

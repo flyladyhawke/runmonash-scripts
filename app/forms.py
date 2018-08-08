@@ -14,7 +14,7 @@ class LoginForm(FlaskForm):
 
 
 class TimeTrialForm(FlaskForm):
-    date = DateField('Date', validators=[DataRequired()])
+    date = DateField('Date', validators=[DataRequired()], render_kw={"placeholder": "Enter Date in format: yyyy-mm-dd"})
     description = StringField('Description')
     submit = SubmitField('Add')
 
@@ -38,7 +38,7 @@ class TimeTrialResultForm(FlaskForm):
         validators=[DataRequired()],
         query_factory=lambda: Runner.query.order_by(Runner.first_name.asc()).all() #filter_by(active=1)
     )
-    time = TimeField('Time', format='%M:%S')
+    time = TimeField('Time', format='%M:%S', render_kw={"placeholder": "Enter Time in format: mm:ss"})
     comment = StringField('Comment')
     submit = SubmitField('Add')
 
