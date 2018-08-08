@@ -6,6 +6,8 @@ from src.time_trial import TimeTrialSpreadsheet, TimeTrialUtils
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import HTTPException, Forbidden
 from flask_login import login_required, current_user, login_user, logout_user
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.ticker as ticker
