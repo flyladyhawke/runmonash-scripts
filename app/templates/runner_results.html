@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block app_content %}
+    <h2 class="sub_title">Runner Details - {{ runner.first_name }} {{ runner.last_name }}</h2>
+    {% if current_user.is_authenticated and (current_user.level >= 2 or current_user.id == runner.id) %}
+    {% for title, form in forms %}
+    {{ title }}
+    <div class="row">
+        <div class="col-md-4">
+            {{ wtf.quick_form(form) }}
+        </div>
+    </div>
+    <hr/>
+    {% endfor %}
+    <br/>
+    {% endif %}
+    {% include '_results.html' %}
+    {{ data }}
+    {% if url %}
+    <img src={{ url }} alt="Chart">
+    {% endif %}
+{% endblock %}
