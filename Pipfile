@@ -14,6 +14,7 @@ matplotlib = "*"
 openpyxl = "*"
 psycopg2 = "*"
 gunicorn = "*"
+pandas = "*"
 
 [dev-packages]
 
