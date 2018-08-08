@@ -4,7 +4,7 @@ from openpyxl import load_workbook, Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font
 from datetime import datetime
-import pandas as pd
+# import pandas as pd
 import numpy as np
 
 
