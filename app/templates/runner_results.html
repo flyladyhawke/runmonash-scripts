@@ -2,30 +2,20 @@
 {% import 'bootstrap/wtf.html' as wtf %}
 
 {% block app_content %}
-    <h2 class="sub_title">Results by Runner - {{ runner.first_name }} {{ runner.last_name }}</h2>
+    <h2 class="sub_title">Runner Details - {{ runner.first_name }} {{ runner.last_name }}</h2>
     {% if current_user.is_authenticated and (current_user.level >= 2 or current_user.id == runner.id) %}
+    {% for title, form in forms %}
+    {{ title }}
     <div class="row">
         <div class="col-md-4">
             {{ wtf.quick_form(form) }}
         </div>
     </div>
+    <hr/>
+    {% endfor %}
     <br/>
     {% endif %}
     {% include '_results.html' %}
-    <nav aria-label="">
-        <ul class="pager">
-            <li class="previous{% if not prev_url %} disabled{% endif %}">
-                <a href="{{ prev_url or '#' }}">
-                    <span aria-hidden="true">&larr;</span> Prev
-                </a>
-            </li>
-            <li class="next{% if not next_url %} disabled{% endif %}">
-                <a href="{{ next_url or '#' }}">
-                    Next <span aria-hidden="true">&rarr;</span>
-                </a>
-            </li>
-        </ul>
-    </nav>
     {{ data }}
     {% if url %}
     <img src={{ url }} alt="Chart">

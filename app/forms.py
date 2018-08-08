@@ -13,13 +13,13 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Sign In')
 
 
-class AddTimeTrial(FlaskForm):
-    date = DateField('Date', validators=[DataRequired()])
-    description = StringField('Description', validators=[DataRequired()])
+class TimeTrialForm(FlaskForm):
+    date = DateField('Date', validators=[DataRequired()], render_kw={"placeholder": "Enter Date in format: yyyy-mm-dd"})
+    description = StringField('Description')
     submit = SubmitField('Add')
 
 
-class AddRunner(FlaskForm):
+class RunnerForm(FlaskForm):
     first_name = StringField('First Name', validators=[DataRequired()])
     last_name = StringField('Last Name', validators=[DataRequired()])
     gender = SelectField('Gender', choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')])
@@ -27,10 +27,18 @@ class AddRunner(FlaskForm):
     submit = SubmitField('Add')
 
 
-class AddResult(FlaskForm):
-    time_trial_id = QuerySelectField('Date', validators=[DataRequired()], query_factory=lambda: TimeTrial.query.all())
-    runner_id = QuerySelectField('Runner', validators=[DataRequired()], query_factory=lambda: Runner.query.all())
-    time = TimeField('Time', format='%M:%S')
+class TimeTrialResultForm(FlaskForm):
+    time_trial_id = QuerySelectField(
+        'Date',
+        validators=[DataRequired()],
+        query_factory=lambda: TimeTrial.query.order_by(TimeTrial.date.desc()).all()
+    )
+    runner_id = QuerySelectField(
+        'Runner',
+        validators=[DataRequired()],
+        query_factory=lambda: Runner.query.order_by(Runner.first_name.asc()).all() #filter_by(active=1)
+    )
+    time = TimeField('Time', format='%M:%S', render_kw={"placeholder": "Enter Time in format: mm:ss"})
     comment = StringField('Comment')
     submit = SubmitField('Add')
 
@@ -41,6 +49,15 @@ class LoadAttending(FlaskForm):
         FileAllowed(['xlsx'], 'excel (.xlsx) only!')
     ])
     submit = SubmitField('Upload')
+
+
+class PrintTimeTrial(FlaskForm):
+    time_trial_id = QuerySelectField(
+        'Date',
+        validators=[DataRequired()],
+        query_factory=lambda: TimeTrial.query.order_by(TimeTrial.date.desc()).all()
+    )
+    submit = SubmitField('Download')
 
 
 class LoadResults(FlaskForm):
