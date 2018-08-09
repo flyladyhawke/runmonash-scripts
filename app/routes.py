@@ -390,7 +390,6 @@ def export_results():
         raise Forbidden
     form = PrintTimeTrial()
     if form.validate_on_submit():
-        sheet = TimeTrialSpreadsheet(False)
         current_time_trial = form.time_trial_id.data
         date = current_time_trial.date.strftime('%Y_%m_%d')
         filename = 'time_trial_results_'+date+'.xlsx'
@@ -398,9 +397,10 @@ def export_results():
         path_read = 'static/time_trials/' + filename
         results = [
             [str(k.runner), k.runner.get_latest_result(), k.runner.get_pb(), k.get_is_pb(), k.get_is_first_time()]
-            for k in current_time_trial.results
+            for k in current_time_trial.results.join(TimeTrialResult.runner).order_by(Runner.first_name.asc())
         ]
-        sheet.export(results, current_time_trial.date, path)
+        headers = ['Name', 'Latest', 'PB', 'Is PB', 'Is First Time']
+        TimeTrialUtils.export(results, headers, path)
 
         return send_file(
             path_read,

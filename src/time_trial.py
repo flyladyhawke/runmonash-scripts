@@ -5,11 +5,10 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font
 from datetime import datetime
 # import pandas as pd
-import numpy as np
+# import numpy as np
 
 
 class TimeTrialUtils:
-
     template_loader = False
     template_env = False
 
@@ -140,8 +139,8 @@ class TimeTrialUtils:
     def make_active(filename):
         wb = load_workbook(filename)
         ws = wb['Sheet1']
-        #data = ws.values
-        #data = list(data)
+        # data = ws.values
+        # data = list(data)
         names = []
         for i in range(2, ws.max_row):
             for j in range(1, ws.max_column):
@@ -150,13 +149,28 @@ class TimeTrialUtils:
                 if name == '' or name is None:
                     continue
                 names.append(TimeTrialUtils.get_names(name))
-        #for i in range(2, ws.max_row):
+        # for i in range(2, ws.max_row):
         #    for j in range(1, ws.max_column):
         #        name = data[j][i]
         #        if name == '' or name is None:
         #            continue
         #        names.append(TimeTrialUtils.get_names(name))
         return names
+
+    @staticmethod
+    def export(names, headers, path):
+        wb = Workbook()
+        ws = wb.active
+        row_count = 1
+        for col in range(1, len(headers)+1):
+            ws[get_column_letter(col) + str(row_count)] = headers[col-1]
+        row_count += 1
+
+        for name in names:
+            for col in range(1, len(name)+1):
+                ws[get_column_letter(col) + str(row_count)] = names[row_count - 2][col-1]
+            row_count += 1
+        wb.save(path)
 
 
 class TimeTrialSpreadsheet:
@@ -169,7 +183,6 @@ class TimeTrialSpreadsheet:
         if not path:
             path = 'Run Monash Time Trial.xlsm'
         self.wb = load_workbook(path)
-        ws = self.wb['Names']
 
     def get_runners_from(self):
         self.runners = {}
@@ -224,19 +237,6 @@ class TimeTrialSpreadsheet:
             self.time_trials[i] = {'date': trial_date}
 
         return self.time_trials
-
-    def export(self, names, date, path):
-        wb = Workbook()
-        ws = wb.active
-        count = 1
-        for name in names:
-            ws['A' + str(count)] = names[count - 1][0]
-            ws['B' + str(count)] = names[count - 1][1]
-            ws['C' + str(count)] = names[count - 1][2]
-            ws['D' + str(count)] = names[count - 1][3]
-            ws['E' + str(count)] = names[count - 1][4]
-            count += 1
-        wb.save(path)
 
     def get_template_from(self, names, date, path):
         ws = self.wb['Template']
@@ -308,5 +308,5 @@ class TimeTrialAnalysis:
 
     def __init__(self):
         print('test')
-        #df = pd.DataFrame(data=runners, columns=["active","name",'gender']) # , columns=cols)
-        #df = pd.DataFrame(ws.values)
+        # df = pd.DataFrame(data=runners, columns=["active","name",'gender']) # , columns=cols)
+        # df = pd.DataFrame(ws.values)

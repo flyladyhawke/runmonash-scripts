@@ -23,7 +23,7 @@
     <tbody>
     {% for item in current %}
         <tr>
-            <td data-order="{{ item.date }}">{{ item.date.strftime("%d/%m/%Y") }}</td>
+            <td data-order="{{ item.date }}">{{ item.get_formatted_date() }}</td>
             <td>{% if item.description %}{{ item.description }}{% endif %}</td>
             <td>{{ item.results.count() }}</td>
         <td>
