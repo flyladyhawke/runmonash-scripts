@@ -2,12 +2,11 @@
 
 {% block app_content %}
     <h2 class="sub_title">Welcome to Run Monash - Time Trials</h2>
-    <table class="table">
-        <th>Date</th><th>Description</th><th>Actions</th></tr>
-    {% for item in current %}
-        <tr><td>{{ item.date }}</td><td>{{ item.description }}</td><td>
-            <a href="{{ url_for('time_trial_result', date=item.date) }}"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
-        </td></tr>
-    {% endfor %}
-    </table>
+    <ul class="list-group">
+        <li class="list-group-item"><a href="{{ url_for('time_trial') }}">Time Trials</a></li>
+        <li class="list-group-item"><a href="{{ url_for('runner') }}">Runners</a></li>
+        {% if current_user.is_authenticated and current_user.level >= 2 %}
+            <li class="list-group-item"><a href="{{ url_for('admin') }}">Admin</a></li>
+        {% endif %}
+     </ul>
 {% endblock %}

@@ -3,7 +3,7 @@
 
 {% block app_content %}
     <h2 class="sub_title">Print Timesheet</h2>
-    Make sure you have entered the time trial first on {{ url_for('time_trial') }}
+    Make sure you have entered the time trial first <a href="{{ url_for('time_trial') }}" target="_blank">here</a>
     <div class="row">
         <div class="col-md-4">
             {{ wtf.quick_form(form) }}

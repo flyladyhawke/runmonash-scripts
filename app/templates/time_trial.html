@@ -29,7 +29,7 @@
         <td>
             <a href="{{ url_for('time_trial_result', date=item.date) }}"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></a>
             {% if current_user.is_authenticated and current_user.level >= 2 %}
-            | <a href="{{ url_for('time_trial', date=item.date, remove=True) }}"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a>
+            <a href="{{ url_for('time_trial_delete', date=item.date) }}"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a>
             {% endif %}
         </td></tr>
     {% endfor %}
