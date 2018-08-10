@@ -1,7 +1,7 @@
 from flask import render_template, url_for, flash, redirect, request, send_file
 from app import app, db
 from app.forms import TimeTrialForm, RunnerForm, TimeTrialResultForm, LoadAttending, LoadResults, \
-    LoginForm, PrintTimeTrial
+    LoginForm, PrintTimeTrial, ExportForm
 from app.models import TimeTrial, Runner, TimeTrialResult
 from src.time_trial import TimeTrialSpreadsheet, TimeTrialUtils
 from werkzeug.utils import secure_filename
@@ -428,31 +428,44 @@ def create_printed_timesheet():
     )
 
 
-@app.route('/export_results', methods=['GET', 'POST'])
+@app.route('/export_results/', methods=['GET', 'POST'])
 @login_required
 def export_results():
     if not is_admin():
         raise Forbidden
-    form = PrintTimeTrial()
+    form = ExportForm()
+    response = ''
     if form.validate_on_submit():
         current_time_trial = form.time_trial_id.data
-        date = current_time_trial.date.strftime('%Y_%m_%d')
-        filename = 'time_trial_results_'+date+'.xlsx'
-        path = 'app/static/time_trials/' + filename
-        path_read = 'static/time_trials/' + filename
         results = [
-            [str(k.runner), k.runner.get_latest_result(), k.runner.get_pb(), k.get_is_pb(), k.get_is_first_time()]
+            {
+                'name': str(k.runner),
+                'latest': k.runner.get_latest_result(),
+                'pb': k.runner.get_pb(),
+                'is_pb': k.get_is_pb(),
+                'is_first_time': k.get_is_first_time()
+            }
             for k in current_time_trial.results.join(TimeTrialResult.runner).order_by(Runner.first_name.asc())
         ]
-        headers = ['Name', 'Latest', 'PB', 'Is PB', 'Is First Time']
-        TimeTrialUtils.export(results, headers, path)
+        date = current_time_trial.date.strftime('%Y_%m_%d')
+        export_type = form.export_type.data
+        if export_type == 'excel':
+            filename = 'time_trial_results_'+date+'.xlsx'
+            path = 'app/static/time_trials/' + filename
+            path_read = 'static/time_trials/' + filename
+            headers = ['Name', 'Latest', 'PB', 'Is PB', 'Is First Time']
+            TimeTrialUtils.save_as_excel(results, headers, path)
 
-        return send_file(
-            path_read,
-            mimetype='application/vnd.ms-excel',
-            as_attachment=True,
-            attachment_filename=filename
-        )
+            return send_file(
+                path_read,
+                mimetype='application/vnd.ms-excel',
+                as_attachment=True,
+                attachment_filename=filename
+            )
+        elif export_type == 'html':
+            utils = TimeTrialUtils(3)
+            response = utils.export_html(results)
+
     breadcrumbs = [
         {'link': url_for('index'), 'text': 'Home', 'visible': True},
         {'link': url_for('admin'), 'text': 'Admin', 'visible': True},
@@ -462,7 +475,8 @@ def export_results():
         'admin/export_results.html',
         title="Export Results",
         form=form,
-        breadcrumbs=breadcrumbs
+        breadcrumbs=breadcrumbs,
+        response=response
     )
 
 

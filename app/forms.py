@@ -60,6 +60,16 @@ class PrintTimeTrial(FlaskForm):
     submit = SubmitField('Download')
 
 
+class ExportForm(FlaskForm):
+    time_trial_id = QuerySelectField(
+        'Date',
+        validators=[DataRequired()],
+        query_factory=lambda: TimeTrial.query.order_by(TimeTrial.date.desc()).all()
+    )
+    export_type = SelectField('Export Type', choices=[('excel', 'Excel (.xlxs)'), ('html', 'HTML')])
+    submit = SubmitField('Download')
+
+
 class LoadResults(FlaskForm):
     attending = FileField('Results Spreadsheet', validators=[
         FileAllowed(['xlsx'], 'excel (.xlsx) only!')

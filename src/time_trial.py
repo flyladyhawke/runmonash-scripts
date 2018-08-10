@@ -39,66 +39,70 @@ class TimeTrialUtils:
             start = x * diff
             end = (x+1) * diff
             columns.append(lines[start:end])
-            
-        parse_format = 'new'
-          
-        if parse_format == 'new':
-            for x in range(0, diff):
-                row = []
-                for y in range(0, len(columns)):
-                    if x < len(columns[y]):
-                        split = columns[y][x].split(delimiter)
-                        name = split[0].strip()
-                        result = split[1].replace('\n', '')
-                        pb = split[2]
-                        desc = split[3]
-                        # print(desc)
-                        # handle different ways of showing PB or first TT
-                        if "**" in desc:
-                            result_type = 'first'
-                        elif "*" in desc:
-                            result_type = 'pb'
-                        else:
-                            result_type = 'normal'
-                        row.append({'name': name, 'time': {'result': result, 'result_type': result_type, 'prev': pb}})
-                    else:
-                        row.append({'name': '', 'time': {'result': '', 'result_type': 'none', 'prev': ''}})
 
-                data.append(row)
-        else:
-            for x in range(0, diff):
-                row = []
-                for y in range(0, len(columns)):
-                    if x < len(columns[y]):
-                        split = columns[y][x].split(delimiter)
-                        name = columns[y][x].rsplit(delimiter, 1)[0].strip()
-                        score = split[len(split)-1]
-                        score = score.replace('\n', '')
-                        pb = ''
-                        # handle different ways of showing PB or first TT
-                        if "**" in score:
-                            result_type = 'first'
-                            result = score.replace("**", "")
-                        elif "*" in score:
-                            result_type = 'pb'
-                            result = score
-                        elif " PB" in score:
-                            result_type = 'pb'
-                            result = score.replace(" PB", "*")
-                        elif "PB" in score:
-                            result_type = 'pb'
-                            result = score.replace("PB", "*")
-                        else:
-                            result_type = 'normal'
-                            result = score
-
-                        row.append({'name': name, 'time': {'result': result, 'result_type': result_type, 'prev': pb}})
+        for x in range(0, diff):
+            row = []
+            for y in range(0, len(columns)):
+                if x < len(columns[y]):
+                    split = columns[y][x].split(delimiter)
+                    name = split[0].strip()
+                    result = split[1].replace('\n', '')
+                    pb = split[2]
+                    desc = split[3]
+                    # print(desc)
+                    # handle different ways of showing PB or first TT
+                    if "**" in desc:
+                        result_type = 'first'
+                    elif "*" in desc:
+                        result_type = 'pb'
                     else:
-                        row.append({'name': '', 'time': {'result': '', 'result_type': 'none', 'prev': ''}})
-                data.append(row)
+                        result_type = 'normal'
+                    row.append({'name': name, 'time': {'result': result, 'result_type': result_type, 'prev': pb}})
+                else:
+                    row.append({'name': '', 'time': {'result': '', 'result_type': 'none', 'prev': ''}})
+
+            data.append(row)
 
         template = self.template_env.get_template("results.html")
         return template.render({'cols': self.cols, 'header': header, 'data': data})
+
+    def export_html(self, results):
+        data = []
+        # cell headers
+        width1 = floor((100 * 4 / 5) // self.cols)
+        width2 = floor((100 * 1 / 5) // self.cols)
+        header = {'width_name': width1, 'width_time': width2}
+
+        for item in results:
+            if item['is_pb'] == 1:
+                result_type = 'pb'
+            elif item['is_first_time'] == 1:
+                result_type = 'first'
+            else:
+                result_type = 'normal'
+            data.append({'name': item['name'], 'time': {'result': item['latest'], 'prev': item['pb'], 'result_type': result_type}})
+
+        sections = list(TimeTrialUtils.chunks(data, self.cols))
+
+        template = self.template_env.get_template("results.html")
+        return template.render({'cols': self.cols, 'header': header, 'data': sections})
+
+    @staticmethod
+    def get_sections(seq, num):
+        out = []
+        last = 0.0
+
+        while last < len(seq):
+            out.append(seq[int(last):int(last + num)])
+            last += num
+
+        return out
+
+    @staticmethod
+    def chunks(seq, chunk_size):
+        """Yield successive chunkSize-sized chunks from list."""
+        for i in range(0, len(seq), chunk_size):
+            yield seq[i:i + chunk_size]
 
     @staticmethod
     def get_names(name):
@@ -158,7 +162,7 @@ class TimeTrialUtils:
         return names
 
     @staticmethod
-    def export(names, headers, path):
+    def save_as_excel(names, headers, path):
         wb = Workbook()
         ws = wb.active
         row_count = 1
@@ -167,8 +171,11 @@ class TimeTrialUtils:
         row_count += 1
 
         for name in names:
+            count = 0
             for col in range(1, len(name)+1):
-                ws[get_column_letter(col) + str(row_count)] = names[row_count - 2][col-1]
+                dict_name = headers[count].lower().replace(' ','_')
+                ws[get_column_letter(col) + str(row_count)] = names[row_count - 2][dict_name]
+                count += 1
             row_count += 1
         wb.save(path)
 
