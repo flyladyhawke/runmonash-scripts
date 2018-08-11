@@ -4,11 +4,11 @@
 {% block app_content %}
     <h2 class="sub_title">Export Results</h2>
     Download a spreadsheet with all the results.<br/>
+    {{ message }}
     <hr/>
     <div class="row">
         <div class="col-md-4">
             {{ wtf.quick_form(form) }}
         </div>
     </div>
-    {{ response }}
 {% endblock %}

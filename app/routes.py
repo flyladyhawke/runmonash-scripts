@@ -370,9 +370,11 @@ def parse_attending():
             else:
                 missing.append(v)
         db.session.commit()
-        message = 'Attendance file uploaded'
-        message += 'The following were not found'
-        message += str(missing)
+        message = 'Attendance file uploaded<br/>'
+        message += 'The following were not found<br/>'
+        for item in missing:
+            if item['first_name'].strip() != '' and item['first_name'][0] != '=':
+                message += item['first_name'] + ' ' + item['last_name'] + '<br/>'
 
         flash('Attendance file uploaded')
     breadcrumbs = [
