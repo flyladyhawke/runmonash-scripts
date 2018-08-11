@@ -80,7 +80,12 @@ class TimeTrialUtils:
                 result_type = 'first'
             else:
                 result_type = 'normal'
-            data.append({'name': item['name'], 'time': {'result': item['latest'], 'prev': item['pb'], 'result_type': result_type}})
+            data.append(
+                {
+                    'name': item['name'],
+                    'time': {'result': item['latest'], 'prev': item['pb'], 'result_type': result_type}
+                }
+            )
 
         sections = list(TimeTrialUtils.chunks(data, self.cols))
 
@@ -143,8 +148,6 @@ class TimeTrialUtils:
     def make_active(filename):
         wb = load_workbook(filename)
         ws = wb['Sheet1']
-        # data = ws.values
-        # data = list(data)
         names = []
         for i in range(2, ws.max_row):
             for j in range(1, ws.max_column):
@@ -153,12 +156,6 @@ class TimeTrialUtils:
                 if name == '' or name is None:
                     continue
                 names.append(TimeTrialUtils.get_names(name))
-        # for i in range(2, ws.max_row):
-        #    for j in range(1, ws.max_column):
-        #        name = data[j][i]
-        #        if name == '' or name is None:
-        #            continue
-        #        names.append(TimeTrialUtils.get_names(name))
         return names
 
     @staticmethod
@@ -173,7 +170,7 @@ class TimeTrialUtils:
         for name in names:
             count = 0
             for col in range(1, len(name)+1):
-                dict_name = headers[count].lower().replace(' ','_')
+                dict_name = headers[count].lower().replace(' ', '_')
                 ws[get_column_letter(col) + str(row_count)] = names[row_count - 2][dict_name]
                 count += 1
             row_count += 1

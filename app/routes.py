@@ -476,7 +476,7 @@ def export_results():
         title="Export Results",
         form=form,
         breadcrumbs=breadcrumbs,
-        response=response
+        message=response
     )
 
 
