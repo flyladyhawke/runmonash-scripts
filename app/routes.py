@@ -17,7 +17,10 @@ import matplotlib.pyplot as plt
 @app.route('/')
 @app.route('/index')
 def index():
-    return render_template('index.html', title='Index')
+    breadcrumbs = [
+        {'text': 'Home'}
+    ]
+    return render_template('index.html', title='Index', breadcrumbs=breadcrumbs)
 
 
 @app.route('/runner', methods=['GET', 'POST'])
