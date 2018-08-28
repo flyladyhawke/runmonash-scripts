@@ -12,7 +12,7 @@
     <tr>
         <td data-order="{{ item.time_trial.date }}">
             <a href="{{ url_for('time_trial_result', date=item.time_trial.date) }}">
-                {{ item.time_trial.date.strftime("%d/%m/%Y") }}
+                {{ item.time_trial.get_formatted_date() }}
             </a>
         </td>
         <td>

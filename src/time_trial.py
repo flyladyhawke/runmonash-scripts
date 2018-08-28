@@ -5,11 +5,10 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font
 from datetime import datetime
 # import pandas as pd
-import numpy as np
+# import numpy as np
 
 
 class TimeTrialUtils:
-
     template_loader = False
     template_env = False
 
@@ -40,66 +39,75 @@ class TimeTrialUtils:
             start = x * diff
             end = (x+1) * diff
             columns.append(lines[start:end])
-            
-        parse_format = 'new'
-          
-        if parse_format == 'new':
-            for x in range(0, diff):
-                row = []
-                for y in range(0, len(columns)):
-                    if x < len(columns[y]):
-                        split = columns[y][x].split(delimiter)
-                        name = split[0].strip()
-                        result = split[1].replace('\n', '')
-                        pb = split[2]
-                        desc = split[3]
-                        # print(desc)
-                        # handle different ways of showing PB or first TT
-                        if "**" in desc:
-                            result_type = 'first'
-                        elif "*" in desc:
-                            result_type = 'pb'
-                        else:
-                            result_type = 'normal'
-                        row.append({'name': name, 'time': {'result': result, 'result_type': result_type, 'prev': pb}})
-                    else:
-                        row.append({'name': '', 'time': {'result': '', 'result_type': 'none', 'prev': ''}})
 
-                data.append(row)
-        else:
-            for x in range(0, diff):
-                row = []
-                for y in range(0, len(columns)):
-                    if x < len(columns[y]):
-                        split = columns[y][x].split(delimiter)
-                        name = columns[y][x].rsplit(delimiter, 1)[0].strip()
-                        score = split[len(split)-1]
-                        score = score.replace('\n', '')
-                        pb = ''
-                        # handle different ways of showing PB or first TT
-                        if "**" in score:
-                            result_type = 'first'
-                            result = score.replace("**", "")
-                        elif "*" in score:
-                            result_type = 'pb'
-                            result = score
-                        elif " PB" in score:
-                            result_type = 'pb'
-                            result = score.replace(" PB", "*")
-                        elif "PB" in score:
-                            result_type = 'pb'
-                            result = score.replace("PB", "*")
-                        else:
-                            result_type = 'normal'
-                            result = score
-
-                        row.append({'name': name, 'time': {'result': result, 'result_type': result_type, 'prev': pb}})
+        for x in range(0, diff):
+            row = []
+            for y in range(0, len(columns)):
+                if x < len(columns[y]):
+                    split = columns[y][x].split(delimiter)
+                    name = split[0].strip()
+                    result = split[1].replace('\n', '')
+                    pb = split[2]
+                    desc = split[3]
+                    # print(desc)
+                    # handle different ways of showing PB or first TT
+                    if "**" in desc:
+                        result_type = 'first'
+                    elif "*" in desc:
+                        result_type = 'pb'
                     else:
-                        row.append({'name': '', 'time': {'result': '', 'result_type': 'none', 'prev': ''}})
-                data.append(row)
+                        result_type = 'normal'
+                    row.append({'name': name, 'time': {'result': result, 'result_type': result_type, 'prev': pb}})
+                else:
+                    row.append({'name': '', 'time': {'result': '', 'result_type': 'none', 'prev': ''}})
+
+            data.append(row)
 
         template = self.template_env.get_template("results.html")
         return template.render({'cols': self.cols, 'header': header, 'data': data})
+
+    def export_html(self, results):
+        data = []
+        # cell headers
+        width1 = floor((100 * 4 / 5) // self.cols)
+        width2 = floor((100 * 1 / 5) // self.cols)
+        header = {'width_name': width1, 'width_time': width2}
+
+        for item in results:
+            if item['is_pb'] == 1:
+                result_type = 'pb'
+            elif item['is_first_time'] == 1:
+                result_type = 'first'
+            else:
+                result_type = 'normal'
+            data.append(
+                {
+                    'name': item['name'],
+                    'time': {'result': item['latest'], 'prev': item['pb'], 'result_type': result_type}
+                }
+            )
+
+        sections = list(TimeTrialUtils.chunks(data, self.cols))
+
+        template = self.template_env.get_template("results.html")
+        return template.render({'cols': self.cols, 'header': header, 'data': sections})
+
+    @staticmethod
+    def get_sections(seq, num):
+        out = []
+        last = 0.0
+
+        while last < len(seq):
+            out.append(seq[int(last):int(last + num)])
+            last += num
+
+        return out
+
+    @staticmethod
+    def chunks(seq, chunk_size):
+        """Yield successive chunkSize-sized chunks from list."""
+        for i in range(0, len(seq), chunk_size):
+            yield seq[i:i + chunk_size]
 
     @staticmethod
     def get_names(name):
@@ -140,8 +148,6 @@ class TimeTrialUtils:
     def make_active(filename):
         wb = load_workbook(filename)
         ws = wb['Sheet1']
-        #data = ws.values
-        #data = list(data)
         names = []
         for i in range(2, ws.max_row):
             for j in range(1, ws.max_column):
@@ -150,13 +156,25 @@ class TimeTrialUtils:
                 if name == '' or name is None:
                     continue
                 names.append(TimeTrialUtils.get_names(name))
-        #for i in range(2, ws.max_row):
-        #    for j in range(1, ws.max_column):
-        #        name = data[j][i]
-        #        if name == '' or name is None:
-        #            continue
-        #        names.append(TimeTrialUtils.get_names(name))
         return names
+
+    @staticmethod
+    def save_as_excel(names, headers, path):
+        wb = Workbook()
+        ws = wb.active
+        row_count = 1
+        for col in range(1, len(headers)+1):
+            ws[get_column_letter(col) + str(row_count)] = headers[col-1]
+        row_count += 1
+
+        for name in names:
+            count = 0
+            for col in range(1, len(name)+1):
+                dict_name = headers[count].lower().replace(' ', '_')
+                ws[get_column_letter(col) + str(row_count)] = names[row_count - 2][dict_name]
+                count += 1
+            row_count += 1
+        wb.save(path)
 
 
 class TimeTrialSpreadsheet:
@@ -169,7 +187,6 @@ class TimeTrialSpreadsheet:
         if not path:
             path = 'Run Monash Time Trial.xlsm'
         self.wb = load_workbook(path)
-        ws = self.wb['Names']
 
     def get_runners_from(self):
         self.runners = {}
@@ -224,19 +241,6 @@ class TimeTrialSpreadsheet:
             self.time_trials[i] = {'date': trial_date}
 
         return self.time_trials
-
-    def export(self, names, date, path):
-        wb = Workbook()
-        ws = wb.active
-        count = 1
-        for name in names:
-            ws['A' + str(count)] = names[count - 1][0]
-            ws['B' + str(count)] = names[count - 1][1]
-            ws['C' + str(count)] = names[count - 1][2]
-            ws['D' + str(count)] = names[count - 1][3]
-            ws['E' + str(count)] = names[count - 1][4]
-            count += 1
-        wb.save(path)
 
     def get_template_from(self, names, date, path):
         ws = self.wb['Template']
@@ -308,5 +312,5 @@ class TimeTrialAnalysis:
 
     def __init__(self):
         print('test')
-        #df = pd.DataFrame(data=runners, columns=["active","name",'gender']) # , columns=cols)
-        #df = pd.DataFrame(ws.values)
+        # df = pd.DataFrame(data=runners, columns=["active","name",'gender']) # , columns=cols)
+        # df = pd.DataFrame(ws.values)

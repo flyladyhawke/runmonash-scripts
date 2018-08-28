@@ -36,7 +36,7 @@ class TimeTrialResultForm(FlaskForm):
     runner_id = QuerySelectField(
         'Runner',
         validators=[DataRequired()],
-        query_factory=lambda: Runner.query.order_by(Runner.first_name.asc()).all() #filter_by(active=1)
+        query_factory=lambda: Runner.query.order_by(Runner.first_name.asc()).all()  # filter_by(active=1)
     )
     time = TimeField('Time', format='%M:%S', render_kw={"placeholder": "Enter Time in format: mm:ss"})
     comment = StringField('Comment')
@@ -57,6 +57,16 @@ class PrintTimeTrial(FlaskForm):
         validators=[DataRequired()],
         query_factory=lambda: TimeTrial.query.order_by(TimeTrial.date.desc()).all()
     )
+    submit = SubmitField('Download')
+
+
+class ExportForm(FlaskForm):
+    time_trial_id = QuerySelectField(
+        'Date',
+        validators=[DataRequired()],
+        query_factory=lambda: TimeTrial.query.order_by(TimeTrial.date.desc()).all()
+    )
+    export_type = SelectField('Export Type', choices=[('excel', 'Excel (.xlxs)'), ('html', 'HTML')])
     submit = SubmitField('Download')
 
 

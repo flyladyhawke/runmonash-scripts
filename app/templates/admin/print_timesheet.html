@@ -3,10 +3,13 @@
 
 {% block app_content %}
     <h2 class="sub_title">Print Timesheet</h2>
-    Make sure you have entered the time trial first on {{ url_for('time_trial') }}
+    Download a spreadsheet with the list of active runners.<br/>
+    Make sure you have entered the time trial first <a href="{{ url_for('time_trial') }}" target="_blank">here</a>
+    {{ message }}
+    <hr/>
     <div class="row">
         <div class="col-md-4">
-            {{ wtf.quick_form(form) }}
+            {{ wtf.quick_form(form, button_map={'submit': 'primary'}) }}
         </div>
     </div>
 {% endblock %}

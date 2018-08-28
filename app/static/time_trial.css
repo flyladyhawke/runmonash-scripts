@@ -2,7 +2,10 @@ h1.page_title
 {
     margin-top: 0;
     padding-top: 0;
+    margin-bottom: 0;
     text-align: center;
+    border: 1px solid #337ab7;
+    border-radius: 10px 10px 0 0;
 }
 h2.sub_title
 {
@@ -11,4 +14,18 @@ h2.sub_title
     font-weight: bold;
     margin-bottom: 1em;
     padding-bottom: 0.25em;
+}
+ol.breadcrumb
+{
+    margin-bottom: 10px !important;
+    padding-bottom: 10px !important;
+    padding-top: 10px !important;
+    border: 1px solid #337ab7;
+    border-radius: 0 0 10px 10px;
+}
+div.alert
+{
+    margin-bottom: 10px !important;
+    padding-bottom: 10px !important;
+    padding-top: 10px !important;
 }

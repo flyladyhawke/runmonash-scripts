@@ -15,8 +15,11 @@ class TimeTrial(db.Model):
     description = db.Column(db.String(150))
     results = db.relationship('TimeTrialResult', backref='time_trial', lazy='dynamic')
 
+    def get_formatted_date(self):
+        return self.date.strftime("%d/%m/%Y")
+
     def __repr__(self):
-        return '{}'.format(self.date)
+        return '{}'.format(self.date.strftime('%d/%m/%Y'))
 
 
 class Runner(UserMixin, db.Model):
@@ -29,14 +32,6 @@ class Runner(UserMixin, db.Model):
     level = db.Column(db.Integer)
     password_hash = db.Column(db.String(128))
     results = db.relationship('TimeTrialResult', backref='runner', lazy='dynamic')
-
-    def is_admin(self):
-        # TODO fix
-        return self.is_authenticated and self.level >= 2
-
-    def is_sys_admin(self):
-        # TODO fix
-        return self.is_authenticated and self.level >= 3
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -89,7 +84,7 @@ class TimeTrialResult(db.Model):
         pb_time = self.runner.get_pb_time()
         # Check number of results to make sure not a duplicate pb
         # TODO make only for time trials earlier than this
-        results = TimeTrialResult.query.filter_by(runner_id=self.runner_id,time=pb_time)
+        results = TimeTrialResult.query.filter_by(runner_id=self.runner_id, time=pb_time)
         if results.count() == 1 and self.time == pb_time:
             return True
         else:
