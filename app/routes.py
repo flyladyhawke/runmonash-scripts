@@ -357,7 +357,9 @@ def parse_attending():
     if form.validate_on_submit():
         f = form.attending.data
         filename = secure_filename(f.filename)
-        path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        abs_path = os.path.abspath(os.path.dirname(__file__))
+        # remove /app from path
+        path = abs_path[:-4] + '/' + os.path.join(app.config['UPLOAD_FOLDER'], filename)
         f.save(path)
 
         for item in Runner.query.all():
@@ -405,8 +407,8 @@ def create_printed_timesheet():
         current_time_trial = form.time_trial_id.data
         date = current_time_trial.date.strftime('%Y_%m_%d')
         filename = 'time_trial_'+date+'.xlsx'
-        path = 'app/static/time_trials/' + filename
-        path_read = 'static/time_trials/' + filename
+        path = os.path.abspath(os.path.dirname(__file__)) + '/static/time_trials/' + filename
+        path_read = os.path.abspath(os.path.dirname(__file__)) + '/static/time_trials/' + filename
         active_runners = [
             [str(k), k.get_pb()]
             for k in Runner.query.order_by(Runner.first_name.asc()).filter_by(active=1)
@@ -456,8 +458,8 @@ def export_results():
         export_type = form.export_type.data
         if export_type == 'excel':
             filename = 'time_trial_results_'+date+'.xlsx'
-            path = 'app/static/time_trials/' + filename
-            path_read = 'static/time_trials/' + filename
+            path = os.path.abspath(os.path.dirname(__file__)) + '/static/time_trials/' + filename
+            path_read = os.path.abspath(os.path.dirname(__file__)) + '/static/time_trials/' + filename
             headers = ['Name', 'Latest', 'PB', 'Is PB', 'Is First Time']
             TimeTrialUtils.save_as_excel(results, headers, path)
 
@@ -513,7 +515,7 @@ def make_graph(username, results):
     # plt.axes()
     # plt.set_formatter(dates.DateFormatter('%H:%M'))
     filename = 'images/runner_'+username+'.png'
-    path = 'app/static/' + filename
+    path = os.path.abspath(os.path.dirname(__file__)) + '/static/' + filename
     plt.savefig(path)
     plt.clf()
     return url_for('static', filename=filename)

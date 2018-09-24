@@ -4,6 +4,7 @@ from openpyxl import load_workbook, Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font
 from datetime import datetime
+import os
 # import pandas as pd
 # import numpy as np
 
@@ -185,7 +186,9 @@ class TimeTrialSpreadsheet:
 
     def __init__(self, path):
         if not path:
-            path = 'Run Monash Time Trial.xlsm'
+            abs_path = os.path.abspath(os.path.dirname(__file__))
+            # remove /src from path
+            path = abs_path[:-4] + '/Run Monash Time Trial.xlsm'
         self.wb = load_workbook(path)
 
     def get_runners_from(self):
