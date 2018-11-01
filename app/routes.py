@@ -1,7 +1,7 @@
 from flask import render_template, url_for, flash, redirect, request, send_file
 from app import app, db
 from app.forms import TimeTrialForm, RunnerForm, TimeTrialResultForm, LoadAttending, LoadResults, \
-    LoginForm, PrintTimeTrial, ExportForm
+    LoginForm, PrintTimeTrial, ExportForm, RunnerAdminForm
 from app.models import TimeTrial, Runner, TimeTrialResult
 from src.time_trial import TimeTrialSpreadsheet, TimeTrialUtils
 from werkzeug.utils import secure_filename
@@ -87,10 +87,14 @@ def runner_update(username):
     forms = {}
     if is_sys_admin or (current_user.is_authenticated and current_user.id == current_model.id):
         form_update = RunnerForm(obj=current_model)
+        if current_user.is_authenticated and current_user.level >= 2:
+            form_update = RunnerAdminForm(obj=current_model)
         form_update.submit.label.text = 'Update'
         if form_update.validate_on_submit():
             form_update.populate_obj(current_model)
             db.session.commit()
+            # in case it was changed by form
+            username = current_model.username
             flash('Your changes have been saved.')
         forms['Update Runner'] = form_update
     # if is_admin:
