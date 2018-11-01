@@ -35,6 +35,7 @@ def runner():
         username = model.first_name + '_' + model.last_name
         model.username = username.replace(' ', '_').lower()
         model.level = 1
+        model.set_password("test123")
         db.session.add(model)
         db.session.commit()
         flash('Your changes have been saved.')
