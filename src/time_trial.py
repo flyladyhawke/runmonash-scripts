@@ -150,8 +150,8 @@ class TimeTrialUtils:
         wb = load_workbook(filename)
         ws = wb['Sheet1']
         names = []
-        for i in range(2, ws.max_row):
-            for j in range(1, ws.max_column):
+        for i in range(2, ws.max_row+1):
+            for j in range(1, ws.max_column+1):
                 cell = get_column_letter(j)+str(i)
                 name = ws[cell].value
                 if name == '' or name is None:
