@@ -1,3 +1,8 @@
+<p>
+<span style="vertical-align:text-bottom;font-size:14pt;color:green" class="glyphicon glyphicon-thumbs-up" aria-hidden="true"></span> PB<br/>
+<span style="vertical-align:text-bottom;font-size:14pt;color:lightskyblue" class="glyphicon glyphicon-plus" aria-hidden="true"></span> First Time
+</p>
+<hr/>
 <table id="time-trial-results-list" class="table table-hover" data-page-length='25'>
     <thead>
     <tr>
@@ -23,10 +28,10 @@
         <td>
             {{ item.time.strftime('%M:%S') }}
             {% if item.get_is_pb() %}
-                <span style="vertical-align:text-bottom;font-size:14pt;color:green" class="glyphicon glyphicon-thumbs-up" aria-hidden="true"></span></a>
+                <span style="vertical-align:text-bottom;font-size:14pt;color:green" class="glyphicon glyphicon-thumbs-up" aria-hidden="true"></span>
             {% endif %}
             {% if item.get_is_first_time() %}
-                <span style="vertical-align:text-bottom;font-size:14pt;color:lightskyblue" class="glyphicon glyphicon-plus" aria-hidden="true"></span></a>
+                <span style="vertical-align:text-bottom;font-size:14pt;color:lightskyblue" class="glyphicon glyphicon-plus" aria-hidden="true"></span>
             {% endif %}
         </td>
         <td>{{ item.get_pb() }}</td>
