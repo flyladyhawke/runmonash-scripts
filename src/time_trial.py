@@ -4,6 +4,7 @@ from openpyxl import load_workbook, Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font
 from datetime import datetime
+import os
 # import pandas as pd
 # import numpy as np
 
@@ -15,7 +16,11 @@ class TimeTrialUtils:
     def __init__(self, cols):
         self.cols = cols
 
-        self.template_loader = FileSystemLoader(searchpath="templates/")
+        abs_path = os.path.abspath(os.path.dirname(__file__))
+        # remove /src from path
+        path = abs_path[:-4] + "/templates/"
+
+        self.template_loader = FileSystemLoader(searchpath=path)
         self.template_env = Environment(loader=self.template_loader)
         self.template_env.trim_blocks = True
         self.template_env.lstrip_blocks = True
@@ -149,8 +154,8 @@ class TimeTrialUtils:
         wb = load_workbook(filename)
         ws = wb['Sheet1']
         names = []
-        for i in range(2, ws.max_row):
-            for j in range(1, ws.max_column):
+        for i in range(2, ws.max_row+1):
+            for j in range(1, ws.max_column+1):
                 cell = get_column_letter(j)+str(i)
                 name = ws[cell].value
                 if name == '' or name is None:
@@ -185,7 +190,9 @@ class TimeTrialSpreadsheet:
 
     def __init__(self, path):
         if not path:
-            path = 'Run Monash Time Trial.xlsm'
+            abs_path = os.path.abspath(os.path.dirname(__file__))
+            # remove /src from path
+            path = abs_path[:-4] + '/Run Monash Time Trial.xlsm'
         self.wb = load_workbook(path)
 
     def get_runners_from(self):

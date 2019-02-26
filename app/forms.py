@@ -1,5 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, BooleanField, SubmitField, SelectField, DateField, TimeField, PasswordField
+from wtforms import StringField, BooleanField, SubmitField, SelectField, DateField, TimeField, PasswordField, \
+    HiddenField
 from wtforms.ext.sqlalchemy.fields import QuerySelectField
 from wtforms.validators import DataRequired
 from flask_wtf.file import FileField, FileAllowed, FileRequired
@@ -20,6 +21,17 @@ class TimeTrialForm(FlaskForm):
 
 
 class RunnerForm(FlaskForm):
+    first_name = StringField('First Name', validators=[DataRequired()])
+    last_name = StringField('Last Name', validators=[DataRequired()])
+    gender = SelectField('Gender', choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')])
+    active = BooleanField('Active')
+    submit = SubmitField('Add')
+
+
+class RunnerAdminForm(FlaskForm):
+    id = HiddenField('id')
+    username = StringField('Username', validators=[DataRequired()])
+    level = StringField('Level', validators=[DataRequired()])
     first_name = StringField('First Name', validators=[DataRequired()])
     last_name = StringField('Last Name', validators=[DataRequired()])
     gender = SelectField('Gender', choices=[('M', 'Male'), ('F', 'Female'), ('O', 'Other')])

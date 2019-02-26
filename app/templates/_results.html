@@ -30,7 +30,7 @@
         </td>
         {% if current_user.is_authenticated and current_user.level >= 2 %}
             <td>
-            <a href="{{ url_for('runner', username=item.username) }}"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a>
+            <a href="{{ url_for('time_trial_result_delete', id=item.id) }}"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a>
             </td>
         {% endif %}
     </tr>

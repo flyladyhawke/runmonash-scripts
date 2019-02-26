@@ -1,7 +1,7 @@
 from flask import render_template, url_for, flash, redirect, request, send_file
 from app import app, db
 from app.forms import TimeTrialForm, RunnerForm, TimeTrialResultForm, LoadAttending, LoadResults, \
-    LoginForm, PrintTimeTrial, ExportForm
+    LoginForm, PrintTimeTrial, ExportForm, RunnerAdminForm
 from app.models import TimeTrial, Runner, TimeTrialResult
 from src.time_trial import TimeTrialSpreadsheet, TimeTrialUtils
 from werkzeug.utils import secure_filename
@@ -35,6 +35,7 @@ def runner():
         username = model.first_name + '_' + model.last_name
         model.username = username.replace(' ', '_').lower()
         model.level = 1
+        model.set_password("test123")
         db.session.add(model)
         db.session.commit()
         flash('Your changes have been saved.')
@@ -87,10 +88,14 @@ def runner_update(username):
     forms = {}
     if is_sys_admin or (current_user.is_authenticated and current_user.id == current_model.id):
         form_update = RunnerForm(obj=current_model)
+        if current_user.is_authenticated and current_user.level >= 2:
+            form_update = RunnerAdminForm(obj=current_model)
         form_update.submit.label.text = 'Update'
         if form_update.validate_on_submit():
             form_update.populate_obj(current_model)
             db.session.commit()
+            # in case it was changed by form
+            username = current_model.username
             flash('Your changes have been saved.')
         forms['Update Runner'] = form_update
     # if is_admin:
@@ -357,7 +362,9 @@ def parse_attending():
     if form.validate_on_submit():
         f = form.attending.data
         filename = secure_filename(f.filename)
-        path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        abs_path = os.path.abspath(os.path.dirname(__file__))
+        # remove /app from path
+        path = abs_path[:-4] + '/' + os.path.join(app.config['UPLOAD_FOLDER'], filename)
         f.save(path)
 
         for item in Runner.query.all():
@@ -405,8 +412,8 @@ def create_printed_timesheet():
         current_time_trial = form.time_trial_id.data
         date = current_time_trial.date.strftime('%Y_%m_%d')
         filename = 'time_trial_'+date+'.xlsx'
-        path = 'app/static/time_trials/' + filename
-        path_read = 'static/time_trials/' + filename
+        path = os.path.abspath(os.path.dirname(__file__)) + '/static/time_trials/' + filename
+        path_read = os.path.abspath(os.path.dirname(__file__)) + '/static/time_trials/' + filename
         active_runners = [
             [str(k), k.get_pb()]
             for k in Runner.query.order_by(Runner.first_name.asc()).filter_by(active=1)
@@ -456,8 +463,8 @@ def export_results():
         export_type = form.export_type.data
         if export_type == 'excel':
             filename = 'time_trial_results_'+date+'.xlsx'
-            path = 'app/static/time_trials/' + filename
-            path_read = 'static/time_trials/' + filename
+            path = os.path.abspath(os.path.dirname(__file__)) + '/static/time_trials/' + filename
+            path_read = os.path.abspath(os.path.dirname(__file__)) + '/static/time_trials/' + filename
             headers = ['Name', 'Latest', 'PB', 'Is PB', 'Is First Time']
             TimeTrialUtils.save_as_excel(results, headers, path)
 
@@ -513,7 +520,7 @@ def make_graph(username, results):
     # plt.axes()
     # plt.set_formatter(dates.DateFormatter('%H:%M'))
     filename = 'images/runner_'+username+'.png'
-    path = 'app/static/' + filename
+    path = os.path.abspath(os.path.dirname(__file__)) + '/static/' + filename
     plt.savefig(path)
     plt.clf()
     return url_for('static', filename=filename)
