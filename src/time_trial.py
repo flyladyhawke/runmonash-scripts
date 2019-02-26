@@ -16,7 +16,11 @@ class TimeTrialUtils:
     def __init__(self, cols):
         self.cols = cols
 
-        self.template_loader = FileSystemLoader(searchpath="templates/")
+        abs_path = os.path.abspath(os.path.dirname(__file__))
+        # remove /src from path
+        path = abs_path[:-4] + "/templates/"
+
+        self.template_loader = FileSystemLoader(searchpath=path)
         self.template_env = Environment(loader=self.template_loader)
         self.template_env.trim_blocks = True
         self.template_env.lstrip_blocks = True
