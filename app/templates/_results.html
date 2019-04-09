@@ -1,10 +1,15 @@
+<p>
+<span style="vertical-align:text-bottom;font-size:14pt;color:green" class="glyphicon glyphicon-thumbs-up" aria-hidden="true"></span> PB<br/>
+<span style="vertical-align:text-bottom;font-size:14pt;color:lightskyblue" class="glyphicon glyphicon-plus" aria-hidden="true"></span> First Time
+</p>
+<hr/>
 <table id="time-trial-results-list" class="table table-hover" data-page-length='25'>
     <thead>
     <tr>
         <th>Date</th>
         <th>Runner</th>
         <th>Time</th>
-        <th>Comment</th>
+        <th>PB</th>
         {% if current_user.is_authenticated and current_user.level >= 2 %}<th data-searchable="false" data-orderable="false">Actions</th>{% endif %}</tr>
     </thead>
     <tbody>
@@ -22,12 +27,14 @@
         </td>
         <td>
             {{ item.time.strftime('%M:%S') }}
-        </td>
-        <td>
-            {% if item.comment %}
-            {{ item.comment }}
+            {% if item.get_is_pb() %}
+                <span style="vertical-align:text-bottom;font-size:14pt;color:green" class="glyphicon glyphicon-thumbs-up" aria-hidden="true"></span>
+            {% endif %}
+            {% if item.get_is_first_time() %}
+                <span style="vertical-align:text-bottom;font-size:14pt;color:lightskyblue" class="glyphicon glyphicon-plus" aria-hidden="true"></span>
             {% endif %}
         </td>
+        <td>{{ item.get_pb() }}</td>
         {% if current_user.is_authenticated and current_user.level >= 2 %}
             <td>
             <a href="{{ url_for('time_trial_result_delete', id=item.id) }}"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a>

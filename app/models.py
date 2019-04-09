@@ -77,6 +77,13 @@ class TimeTrialResult(db.Model):
     time = db.Column(db.Time)
     comment = db.Column(db.String(50))
 
+    def get_pb(self):
+        if self.get_is_first_time():
+            return '--'
+
+        # slice the 00-
+        return self.runner.get_pb_time().strftime('%M:%S')
+
     def get_is_pb(self):
         if self.get_is_first_time():
             return False
