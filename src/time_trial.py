@@ -126,7 +126,7 @@ class TimeTrialUtils:
         else:
             first_name = name
             last_name = ''
-        return {'first_name': first_name, 'last_name': last_name}
+        return {'first_name': first_name.strip(), 'last_name': last_name.strip(' -')}
 
     @staticmethod
     def get_time(time):
