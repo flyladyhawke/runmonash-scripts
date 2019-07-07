@@ -362,6 +362,7 @@ def parse_attending():
     if form.validate_on_submit():
         f = form.attending.data
         filename = secure_filename(f.filename)
+        add_missing = form.add_missing.data
         abs_path = os.path.abspath(os.path.dirname(__file__))
         # remove /app from path
         path = abs_path[:-4] + '/' + os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -378,10 +379,26 @@ def parse_attending():
             if item:
                 item.active = 1
             else:
-                missing.append(v)
+                if add_missing:
+                    model = Runner()
+                    model.first_name = v['first_name']
+                    model.last_name = v['last_name']
+                    username = v['first_name'] + '_' + v['last_name']
+                    model.username = username.replace(' ', '_').lower()
+                    model.level = 1
+                    model.gender = 'O'
+                    model.set_password("test123")
+                    db.session.add(model)
+                    missing.append(v)
+                else:
+                    missing.append(v)
         db.session.commit()
         message = 'Attendance file uploaded<br/>'
-        message += 'The following were not found<br/>'
+        if add_missing:
+            message += 'The following were added<br/>'
+        else:
+            message += 'The following were not found<br/>'
+
         for item in missing:
             if item['first_name'].strip() != '' and item['first_name'][0] != '=':
                 message += item['first_name'] + ' ' + item['last_name'] + '<br/>'
