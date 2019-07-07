@@ -60,6 +60,7 @@ class LoadAttending(FlaskForm):
         FileRequired(),
         FileAllowed(['xlsx'], 'excel (.xlsx) only!')
     ])
+    add_missing = BooleanField('Add Missing')
     submit = SubmitField('Upload')
 
 
