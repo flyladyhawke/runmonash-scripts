@@ -393,6 +393,7 @@ def parse_attending():
                     model.username = username.replace(' ', '_').lower()
                     model.level = 1
                     model.gender = 'O'
+                    model.active = 1
                     model.set_password("test123")
                     db.session.add(model)
                     missing.append(v)
