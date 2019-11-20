@@ -59,6 +59,9 @@ def runner():
 def runner_result(username):
     current_model = Runner.query.filter_by(username=username).first_or_404()
     results = current_model.results.order_by(TimeTrialResult.time_trial_id.asc())
+    # if a time trial is deleted, the associated results don't seem to be deleted,
+    # so for the moment, filter them out here.
+    results = [v for v in results if v.time_trial]
     url = make_graph(username, results)
     visible = current_user.is_authenticated and (current_user.level >= 2 or current_user.id == current_model.id)
     breadcrumbs = [
@@ -85,6 +88,9 @@ def runner_result(username):
 def runner_update(username):
     current_model = Runner.query.filter_by(username=username).first_or_404()
     results = current_model.results.order_by(TimeTrialResult.time_trial_id.asc())
+    # if a time trial is deleted, the associated results don't seem to be deleted,
+    # so for the moment, filter them out here.
+    results = [v for v in results if v.time_trial]
     forms = {}
     if is_sys_admin or (current_user.is_authenticated and current_user.id == current_model.id):
         form_update = RunnerForm(obj=current_model)
@@ -518,8 +524,8 @@ def is_sys_admin():
 
 
 def make_graph(username, results):
-    times = [v.time for v in results]
-    time_trial_dates = [v.time_trial.date.strftime('%b %Y') for v in results]
+    times = [v.time for v in results if v.time_trial]
+    time_trial_dates = [v.time_trial.date.strftime('%b %Y') for v in results if v.time_trial]
     # for item in results:
     #    times.append(item/)
     # lnprice = numpy.log(times)
